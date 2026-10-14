@@ -1,0 +1,8 @@
+project_id = "fisch"
+
+[auth]
+enable_anonymous_sign_ins = true
+
+[functions.fisch-api]
+# Browser calls include a signed-in guest JWT; the handler also verifies it with Auth.getUser.
+verify_jwt = true

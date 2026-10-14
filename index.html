@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="mn">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#153d49">
+  <meta name="description" content="Гурван арал, 25 загас, өөрийн аялал. PC болон утасны 3D загасчлалын тоглоом.">
+  <title>fisch — Tides & Islands</title>
+  <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg">
+  <link rel="stylesheet" href="./css/game.css">
+</head>
+<body data-mode="lobby">
+  <canvas id="viewport" aria-label="3D арлын ертөнц"></canvas>
+  <div id="shell">
+    <header class="topbar">
+      <button class="wordmark" data-command="lobby" aria-label="Lobby руу">fisch<span>TIDES & ISLANDS</span></button>
+      <div class="topbar-right">
+        <span id="connectionBadge" class="connection-badge"><i></i> LOCAL</span>
+        <button class="profile-pill" data-command="open" data-payload='{"panel":"profile"}'>
+          <span id="headerAvatar" class="avatar">🎣</span>
+          <span class="profile-copy"><b id="playerName">Fisher</b><span id="playerLevel">LV. 1</span><span class="mini-xp"><i id="headerXp"></i></span></span>
+        </button>
+        <span class="coin-pill"><span class="coin-icon">✦</span><b id="coinCount">0</b></span>
+        <button class="icon-button settings-button" data-command="open" data-payload='{"panel":"settings"}' aria-label="Graphics ба тохиргоо">⚙</button>
+      </div>
+    </header>
+
+    <main id="lobby" class="lobby">
+      <div class="lobby-gradient"></div>
+      <section class="lobby-content">
+        <p class="eyebrow"><span class="little-line"></span> YOUR NEXT ADVENTURE</p>
+        <h1>Далайн цаана<br><em>таны домог.</em></h1>
+        <p class="hero-description">Саваагаа шид. Нууцыг нь нээ.<br>Гурван арал, хорин таван гайхамшиг.</p>
+        <button class="play-button" data-command="play"><span class="play-triangle">▶</span><span><b>Тоглох</b><small id="playDestination">Palm Bay-аас эхэлнэ</small></span><span class="play-arrow">↗</span></button>
+        <nav class="lobby-grid" aria-label="Lobby цэс">
+          <button data-command="open" data-payload='{"panel":"backpack"}'><span>🎒</span><b>Backpack</b><small id="backpackCount">0 / 100</small></button>
+          <button data-command="open" data-payload='{"panel":"profile"}'><span>◉</span><b>Profile</b><small>Таны аялал</small></button>
+          <button data-command="open" data-payload='{"panel":"top"}'><span>♜</span><b>Top 30</b><small>Далайн шилдгүүд</small></button>
+          <button data-command="open" data-payload='{"panel":"friends"}'><span>♧</span><b>Friends</b><small>Найзуудын ертөнц</small></button>
+          <button data-command="open" data-payload='{"panel":"shop"}'><span>⚓</span><b>Rod shop</b><small>Дараагийн саваа</small></button>
+          <button data-command="open" data-payload='{"panel":"map"}'><span>⌁</span><b>Islands</b><small>Шинэ эргийг нээ</small></button>
+        </nav>
+        <div class="lobby-footer"><span>01 — PALM BAY</span><span>25 SPECIES · 3 ISLANDS</span></div>
+      </section>
+      <aside class="island-caption"><span class="caption-line"></span><small>EXPLORE THE ARCHIPELAGO</small><b id="lobbyIslandName">Palm Bay</b><p id="lobbyIslandSubtitle">Эхлэл бүхэн нэг эргээс</p></aside>
+    </main>
+
+    <section id="playHud" class="play-hud" hidden>
+      <div class="location-card"><span class="eyebrow">CURRENT ISLAND</span><b id="islandName">Palm Bay</b><span id="islandTime">10:30</span></div>
+      <nav class="hud-menu" aria-label="Тоглоомын цэс">
+        <button class="icon-button" data-command="open" data-payload='{"panel":"backpack"}' aria-label="Backpack">🎒</button>
+        <button class="icon-button" data-command="open" data-payload='{"panel":"map"}' aria-label="Арлууд">⌁</button>
+        <button class="icon-button" data-command="open" data-payload='{"panel":"guide"}' aria-label="Удирдлага">?</button>
+        <button class="icon-button" data-command="lobby" aria-label="Lobby руу">⌂</button>
+      </nav>
+      <div class="rod-card"><span>ТОНОГЛОСОН САВАА</span><b id="rodName">Driftwood Rod</b></div>
+      <div id="contextHint" class="context-hint">Тавцангийн үзүүрт очиж загасчлаарай.</div>
+      <div class="desktop-hints"><kbd>W A S D</kbd> Алхах <kbd>F</kbd> Загасчлах <kbd>E</kbd> Харилцах <kbd>B</kbd> Backpack</div>
+    </section>
+
+    <div id="touchControls" class="touch-controls" hidden>
+      <div id="joystick" class="joystick" aria-label="Алхах joystick"><span class="joystick-cross">+</span><i data-thumb></i></div>
+      <div class="action-controls">
+        <button id="jumpAction" class="small-action" aria-label="Үсрэх">↑<small>Үсрэх</small></button>
+        <button id="interactAction" class="small-action" aria-label="Харилцах">E<small>Харилцах</small></button>
+        <button id="fishingAction" class="fishing-action"><span id="actionIcon">🎣</span><b id="actionLabel">Шидэх</b><small id="actionSub">Дарж бариад сулла</small></button>
+      </div>
+    </div>
+
+    <section id="fishingHud" class="fishing-hud" hidden aria-live="polite">
+      <div class="fishing-title"><span id="fishingPhase">Саваагаа цэнэглэ</span><small id="fishingRemaining"></small></div>
+      <div id="chargeTrack" class="charge-track"><i id="chargeFill"></i></div>
+      <div id="reelTrack" class="reel-track" hidden><i id="reelBar"></i><b id="reelTarget">◆</b></div>
+      <div id="reelProgressTrack" class="reel-progress" hidden><i id="reelProgress"></i></div>
+      <p id="fishingTip">Хүчээ сонгоод товчоо суллаарай.</p>
+    </section>
+
+    <aside id="performanceHud" class="performance-hud">
+      <div class="performance-top"><i></i><b id="statsFps">— FPS</b><span id="statsHz">RAF — Hz</span><span id="statsQuality">AUTO</span></div>
+      <div id="statsBars" class="stats-bars" aria-hidden="true"></div>
+      <small id="statsDetail">Хэмжилт эхэлж байна…</small>
+    </aside>
+
+    <div id="modalBackdrop" class="modal-backdrop" hidden>
+      <section id="modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="panelTitle">
+        <header class="panel-header"><div><p id="panelEyebrow" class="eyebrow">YOUR VOYAGE</p><h2 id="panelTitle">Backpack</h2></div><button class="close-button" data-command="close" aria-label="Цэс хаах">×</button></header>
+        <div id="panelContent" class="panel-content"></div>
+      </section>
+    </div>
+    <div id="catchNotice" class="catch-notice" hidden></div>
+    <div id="notices" class="notices" role="status" aria-live="polite"></div>
+    <div id="loading" class="loading-screen"><div class="loading-mark">fisch</div><p id="loadingText">Далайг бэлдэж байна…</p><div class="loading-wave"><i></i><i></i><i></i></div><button id="retryButton" class="btn primary" hidden>Дахин оролдох</button></div>
+  </div>
+  <script type="module" src="./js/main.js"></script>
+</body>
+</html>
