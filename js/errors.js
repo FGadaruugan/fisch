@@ -20,6 +20,7 @@ export const MESSAGES = Object.freeze({
   SAVE_UNAVAILABLE:'Энэ browser ахиц хадгалах боломжгүй байна. Тоглолт үргэлжилнэ.',
   SAVE_RECOVERED:'Хадгалсан мэдээлэл уншигдсангүй. Шинэ local profile нээлээ.',
   ONLINE_UNAVAILABLE:'Онлайн үйлчилгээ хараахан холбогдоогүй байна.',
+  FULLSCREEN_UNAVAILABLE:'Browser бүтэн дэлгэц нээхийг зөвшөөрсөнгүй. Тоглолт үргэлжилнэ.',
   AUTH_REQUIRED:'Онлайн profile нэвтэрсэнгүй. Холболтоо шалгаад дахин оролдоорой.',
   FRIEND_NOT_FOUND:'Энэ code-той найз олдсонгүй.',
   INVALID_FRIEND_CODE:'Friend code нь 12 тэмдэгт байна.',

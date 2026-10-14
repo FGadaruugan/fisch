@@ -4,7 +4,7 @@ A playable local 3D fishing game and prepared online services, delivered on the 
 
 - 25 species: 10 Normal / 8 Rare / 4 Legendary / 2 Mythic / 1 ???. Three large islands; Backpack, economy, progression, Profile and mobile controls.
 - Graphics: local Three.js bundle, procedural models/terrain/ocean/sky, LOD/instances, light cycle, shadows/fog, adaptive quality, FPS caps and measured FPS/RAF cadence.
-- 59 automated tests pass, including actual Three.js geometry and real Postgres/PGlite RLS/transaction tests.
+- 62 automated tests pass, including actual Three.js geometry and real Postgres/PGlite RLS/transaction tests.
 - Syntax/import/assets/HTML and browser-bundle checks pass; static package is approximately 1.1 MB / 292 KB gzip.
 - One independent whole-branch review. Concurrent finish/sale retry races and ranking-tab cache mismatch reproduced in failing tests, then fixed. No deferred review findings.
 - Live Supabase smoke exits with an explicit unconfigured-project message. No cloud deployment, Auth settings or advisor results are claimed.
@@ -22,3 +22,9 @@ A playable local 3D fishing game and prepared online services, delivered on the 
 - cloud provisioning/Auth/advisors remain a dependency — Supabase requires organization selection and explicit cost confirmation; unrelated projects stay untouched — cost if wrong: live online activation still needs project configuration and smoke checks.
 - shared-world multiplayer remains outside the confirmed Friends scope — user's choice is add/list/online state — cost if wrong: a later multiplayer request needs a separate synchronization design.
 - server replay of reel input remains outside the agreed elapsed-time/reward contract — current server chooses rewards and validates minimum duration; README states the limit — cost if wrong: automated clients can submit successful outcomes, so competitive rankings need stronger verification.
+
+## Mobile viewport correction
+
+The owner requested moving the central guidance to the bottom, enlarging the game area and placing the source on GitHub main. Guidance now occupies a bottom footer with space above for touch controls; mobile play uses a compact HUD. Play requests fullscreen on touch devices and the explicit fullscreen/exit button remains available. Browser denial preserves normal play. Fullscreen request timing, rejection/retry and Back/exit synchronization have automated coverage. On-device fullscreen and final CSS layout still need a device check.
+
+The original game PR was merged into main at the owner's request; the previous reviewable-branch delivery decision is superseded.
