@@ -51,6 +51,8 @@ npm run dev
 
 Repository **Settings → Pages → Source → GitHub Actions** сонгоно. `main` push эсвэл Actions → **Deploy Fisch Tides** → Run workflow. Workflow нь unit/Postgres tests, syntax/import/assets, static bundle-ийг шалгаад Pages artifact deploy хийнэ. Бүх URL relative тул `/fisch/` subpath дээр ажиллана.
 
+Branch-based Pages ашигласан ч root HTML нь `web/` дахь dependency-гээ багтаасан runtime-ийг нээнэ. `npm run package` нь `dist/` болон commit хийх `web/` bundle-ийг шинэчилнэ. JavaScript/CSS/HTML өөрчилсний дараа `web/`-ийг хамт commit хийнэ; CI нь энэ bundle эх кодтой тохирч байгааг шалгана.
+
 ## Хадгалалт
 
 Local ахиц browser-ийн `localStorage`-д хадгалагдана. Browser data арилгах, private mode, өөр төхөөрөмж ашиглах үед ижил local ахиц баталгаагүй. Storage боломжгүй бол тухайн session-д тоглолт үргэлжилж мэдэгдэл гарна. Гэмтсэн save-ээс зөвшөөрөгдсөн утгуудыг сэргээж, хүчингүй загас/савааг хасна.
