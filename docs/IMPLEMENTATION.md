@@ -28,3 +28,7 @@ A playable local 3D fishing game and prepared online services, delivered on the 
 The owner requested moving the central guidance to the bottom, enlarging the game area and placing the source on GitHub main. Guidance now occupies a bottom footer with space above for touch controls; mobile play uses a compact HUD. Play requests fullscreen on touch devices and the explicit fullscreen/exit button remains available. Browser denial preserves normal play. Fullscreen request timing, rejection/retry and Back/exit synchronization have automated coverage. On-device fullscreen and final CSS layout still need a device check.
 
 The original game PR was merged into main at the owner's request; the previous reviewable-branch delivery decision is superseded.
+
+## GitHub Pages runtime correction
+
+A real HTTP check found that the branch-based Jekyll publisher served the modular source entry with unresolved bare imports, while the Actions publisher served the bundle. The root entry now loads a committed, generated web/ runtime; both publishing paths serve the same game. Static checks reject unresolved runtime package imports, and CI rebuilds and checks the committed runtime. Changes to application source require npm run package and committing web/ together. This uses repository content without requiring new Pages administration permissions.

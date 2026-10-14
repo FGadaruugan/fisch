@@ -18,6 +18,11 @@ for(const dir of ['js','scripts','tests','supabase/functions'])for(const path of
 const html=await readFile(resolve(root,'index.html'),'utf8'),ids=[...html.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]);
 if(new Set(ids).size!==ids.length)throw new Error('Duplicate HTML IDs');
 for(const match of html.matchAll(/\b(?:src|href)="([^"#]+)"/g)){if(!/^(?:https?:|data:)/.test(match[1]))await access(resolve(root,match[1]));}
+// The root HTML is also served by branch-based Pages; its runtime must be self-contained.
+const runtimeEntries=[...html.matchAll(/<script\b[^>]*\btype="module"[^>]*\bsrc="([^"]+)"/g)].map(m=>resolve(root,m[1]));
+const runtime=await build({absWorkingDir:root,entryPoints:runtimeEntries,bundle:true,packages:'external',format:'esm',platform:'browser',splitting:true,outdir:resolve(root,'dist'),write:false,metafile:true,logLevel:'silent'});
+const external=[...new Set(Object.values(runtime.metafile.inputs).flatMap(input=>input.imports.filter(item=>item.external).map(item=>item.path)))];
+if(external.length)throw new Error('Root page requires unresolved browser imports: '+external.join(', '));
 for(const file of ['js/main.js','js/ui.js','js/lobby.js']){
   const source=await readFile(resolve(root,file),'utf8');
   for(const match of source.matchAll(/\b(?:byId|id)\(['"]([^'"]+)['"]\)/g))if(!ids.includes(match[1]))throw new Error(`${file}: missing HTML id ${match[1]}`);
