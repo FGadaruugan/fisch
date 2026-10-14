@@ -12,12 +12,14 @@ import {createAudio} from './audio.js';
 import {normalizeSettings,createFramePacer} from './performance.js';
 import {ONLINE_CONFIG} from './online-config.js';
 import {prepareSocialRefresh} from './ui/social-state.js';
+import {createFullscreenControl} from './fullscreen.js';
 
 const byId=id=>document.getElementById(id),SETTINGS_KEY='fisch3d.settings.v1';
 let settings;try{settings=normalizeSettings(JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}'));}catch{settings=normalizeSettings();}
 let app,graphics,currentScene,audio,socialService=null,onlineService=null,onlineClient=null,refreshGeneration=0,animationId=0;
 let socialState={connected:false,metric:'xp',friends:[],requests:{incoming:[],outgoing:[]},leaderboard:null},heartbeatTimer=null;
 const view=createUI({document,onCommand:command,onPhase:phase=>audio?.phase(phase),onCatch:caught=>{audio?.catch();currentScene?.rig.showCatch(caught);}});
+const fullscreen=createFullscreenControl({document,button:byId('fullscreenButton'),onResize:()=>graphics?.resize(),onUnavailable:()=>view.showNotice('FULLSCREEN_UNAVAILABLE')});
 audio=createAudio(()=>settings.volume);
 const localService=createLocalService({onStorageError:code=>view.showNotice(code)});
 const pacer=createFramePacer(settings.targetFps);view.setSettings(settings);
@@ -86,12 +88,14 @@ async function refreshSocial(payload={}){
   }catch(error){if(token===refreshGeneration){socialState={...socialState,loading:false,error:'Холболт тасарлаа. Дахин шалгаарай.'};view.setSocial(socialState);}}
 }
 async function command(name,payload={}){
+  if(name==='fullscreen'){await fullscreen.toggle();return;}
   if(name==='settings'){
     const previousFps=settings.targetFps;
     settings=normalizeSettings({...settings,...payload});graphics?.applySettings(payload);if(previousFps!==settings.targetFps)pacer.setTarget(settings.targetFps);view.setSettings(settings);
     try{localStorage.setItem(SETTINGS_KEY,JSON.stringify(settings));}catch{view.showNotice('SAVE_UNAVAILABLE');}return;
   }
   if(!app)return;
+  if(name==='play'&&window.matchMedia('(pointer: coarse)').matches)void fullscreen.enter();
   if(name==='connect_online'){await connectOnline();return;}
   if(name==='switch_local'){refreshGeneration++;if(heartbeatTimer)clearInterval(heartbeatTimer);heartbeatTimer=null;onlineClient?.auth.stopAutoRefresh();await app.setService(localService);view.setConnection('local');view.setSocial({connected:false,friends:[],requests:{incoming:[],outgoing:[]},leaderboard:null});return;}
   if(name==='social_refresh'){await refreshSocial(payload);return;}
@@ -127,5 +131,5 @@ try{
   function visibility(value){app.setVisible(value);pacer.reset();graphics.resetMonitor();if(value)audio.resume();else audio.suspend();}
   document.addEventListener('visibilitychange',()=>visibility(!document.hidden));window.addEventListener('blur',()=>visibility(false));window.addEventListener('focus',()=>visibility(!document.hidden));
   byId('viewport').addEventListener('webglcontextlost',event=>{event.preventDefault();visibility(false);view.showError('Графикийн холболт түр тасарлаа. Ахиц хадгалагдсан. Дахин оролдоорой.');});
-  window.addEventListener('beforeunload',()=>{cancelAnimationFrame(animationId);if(heartbeatTimer)clearInterval(heartbeatTimer);app.dispose();graphics.dispose();audio.dispose();view.dispose();},{once:true});
+  window.addEventListener('beforeunload',()=>{cancelAnimationFrame(animationId);if(heartbeatTimer)clearInterval(heartbeatTimer);fullscreen.dispose();app.dispose();graphics.dispose();audio.dispose();view.dispose();},{once:true});
 }catch(error){console.error('Fisch startup failed',error);view.showError('3D график нээгдсэнгүй. WebGL 2 дэмждэг browser дээр дахин оролдоорой.');}
