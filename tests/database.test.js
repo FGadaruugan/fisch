@@ -19,6 +19,22 @@ async function fixture(){
   }catch(error){await db.close();throw error;}
 }
 async function asUser(db,id,fn){await db.query("select set_config('request.jwt.claim.sub',$1,false)",[id]);await db.exec('set role authenticated');try{return await fn();}finally{await db.exec('reset role');}}
+test('one-time import preserves local progress without crediting Top and cannot overwrite an account',async()=>{
+  const db=await fixture();try{
+    const local=createInitialState();local.coins=650;local.totalXp=1600;local.rods.push('ocean');local.equippedRod='ocean';local.lastIsland='frost';local.stats.totalCaught=23;local.collection=['u01'];
+    local.stats.bestCatch={id:'old-secret',speciesId:'u01',weightGrams:1000000,islandId:'frost',caughtAt:'2026-10-14T00:00:00.000Z'};
+    const imported=await db.query('select public.fisch_import_local($1,$2,$3,$4::jsonb) as result',[A,'import-1','local-save',JSON.stringify(local)]);
+    assert.equal(imported.rows[0].result.snapshot.totalXp,1600);assert.equal(imported.rows[0].result.canImport,false);
+    assert.equal((await db.query('select total_xp from public.fisch_scores where user_id=$1',[A])).rows[0].total_xp,0);
+    assert.equal((await db.query('select public.fisch_import_local($1,$2,$3,$4::jsonb) as result',[A,'import-1','local-save',JSON.stringify(local)])).rows[0].result.revision,1);
+    await assert.rejects(db.query('select public.fisch_import_local($1,$2,$3,$4::jsonb)',[A,'another-import','other-save',JSON.stringify(local)]),/IMPORT_UNAVAILABLE/);
+    const next=structuredClone(local),caught={id:'online-catch',speciesId:'n07',weightGrams:400,islandId:'frost',caughtAt:new Date().toISOString()};next.totalXp+=12;next.stats.totalCaught++;next.fish.push(caught);
+    await db.query('select public.fisch_commit_state($1,$2,$3,1,$4::jsonb,$5::jsonb,null)',[A,'catch-after-import','catch',JSON.stringify(next),JSON.stringify(caught)]);
+    const score=(await db.query('select total_xp,total_caught,best_grams from public.fisch_scores where user_id=$1',[A])).rows[0];assert.deepEqual(score,{total_xp:12,total_caught:1,best_grams:400});
+    const retry=(await db.query('select public.fisch_import_local($1,$2,$3,$4::jsonb) as result',[A,'import-1','local-save',JSON.stringify(local)])).rows[0].result;assert.equal(retry.snapshot.totalXp,1612);
+    await asUser(db,B,async()=>{await assert.rejects(db.query('select public.fisch_import_local($1,$2,$3,$4::jsonb)',[A,'forged','x',JSON.stringify(local)]),/permission denied/);});
+  }finally{await db.close();}
+});
 test('Postgres RLS isolates private state and denies client reward writes',async()=>{
   const db=await fixture();try{
     await asUser(db,A,async()=>{

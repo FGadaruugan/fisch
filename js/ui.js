@@ -14,14 +14,14 @@ const PANEL_TITLES={backpack:['YOUR COLLECTION','Backpack'],profile:['YOUR STORY
 export function createUI({document:doc,onCommand,onPhase=()=>{},onCatch=()=>{}}) {
   const el=id=>doc.getElementById(id),root=el('shell'),lobby=createLobby({root});
   let snapshot=null,panel=null,mode='lobby',gameMode='local',context={},settings={},stats={},social={connected:false,metric:'xp'},filter={tab:'fish',rarity:'all',sort:'weight'},previousFocus=null,lastPhase='idle',lastNotice='',lastNoticeTime=0,catchTimer=null;
-  const busySources=new Set(),originalDisabled=new WeakMap(),history=[];
+  const busySources=new Set(),originalDisabled=new WeakMap(),history=[];let account={user:null,connected:false};
   const send=(command,payload={})=>Promise.resolve(onCommand(command,payload)).catch(error=>showNotice(error?.code||'UNKNOWN'));
   const isEditing=()=>el('panelContent').contains(doc.activeElement)&&['INPUT','TEXTAREA'].includes(doc.activeElement?.tagName);
   function renderPanel(){
     if(!snapshot||!panel)return;
     const target=el('panelContent');let content;
     if(panel==='backpack')content=renderBackpack(snapshot,{...filter,merchant:context.merchant&&mode==='play',onFilter:patch=>{filter={...filter,...patch};renderPanel();}});
-    else if(panel==='profile')content=renderProfile(snapshot,gameMode);
+    else if(panel==='profile')content=renderProfile(snapshot,gameMode,account);
     else if(panel==='shop')content=h('div',{},h('div',{class:'shop-balance'},h('span',{},'ТАНЫ COIN'),h('b',{},'✦ '+money(snapshot.coins))),renderRodShop(snapshot),renderBackpack(snapshot,{tab:'fish',rarity:'all',sort:'value',merchant:context.merchant&&mode==='play',onFilter:patch=>{filter={...filter,...patch};}}));
     else if(panel==='settings')content=renderSettings(settings,stats);
     else if(panel==='map')content=renderMap(snapshot);
@@ -103,6 +103,7 @@ export function createUI({document:doc,onCommand,onPhase=()=>{},onCatch=()=>{}})
     setSettings(next){settings=next;el('performanceHud').hidden=!settings.showStats;},
     setConnection(nextMode){gameMode=nextMode;el('connectionBadge').className='connection-badge '+(nextMode==='online'?'online':'');el('connectionBadge').replaceChildren(h('i',{}),nextMode==='online'?'ONLINE':'LOCAL');if(panel==='profile'&&!isEditing())renderPanel();},
     setSocial(next){social={...social,...next};if(['top','friends'].includes(panel)&&!isEditing())renderPanel();},
+    setAccount(next){account={...account,...next};if(panel==='profile'&&!isEditing())renderPanel();},
     getPanel:()=>panel,
     renderPerformance(next){
       stats=next;el('statsFps').textContent=(stats.fps||'—')+' FPS';el('statsHz').textContent='RAF ≈ '+(stats.hz||'—')+' Hz';el('statsQuality').textContent=stats.quality||'AUTO';

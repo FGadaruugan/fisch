@@ -101,6 +101,34 @@ function validCatch(raw) {
   const date = typeof raw.caughtAt === "string" && Number.isFinite(Date.parse(raw.caughtAt)) ? new Date(raw.caughtAt).toISOString() : "1970-01-01T00:00:00.000Z";
   return { id: raw.id, speciesId: species.id, weightGrams: raw.weightGrams, islandId: species.islandId, caughtAt: date };
 }
+function normalizeState(input) {
+  const state = createInitialState();
+  if (!input || typeof input !== "object" || Array.isArray(input) || input.version !== 1) return state;
+  state.coins = boundedInt(input.coins, GAME.maxCoins);
+  state.totalXp = boundedInt(input.totalXp);
+  const name = typeof input.profile?.name === "string" ? input.profile.name.replace(/[\u0000-\u001f]/g, "").trim().slice(0, 18) : "";
+  state.profile = { name: name || "Fisher", avatar: Number.isInteger(input.profile?.avatar) && input.profile.avatar >= 0 && input.profile.avatar <= 5 ? input.profile.avatar : 0 };
+  const ids = /* @__PURE__ */ new Set();
+  for (const raw of (Array.isArray(input.fish) ? input.fish : []).slice(0, 1e3)) {
+    const fish = validCatch(raw);
+    if (!fish || ids.has(fish.id)) continue;
+    ids.add(fish.id);
+    state.fish.push(fish);
+    if (state.fish.length === GAME.capacity) break;
+  }
+  state.rods = [.../* @__PURE__ */ new Set(["starter", ...(Array.isArray(input.rods) ? input.rods : []).filter((id) => Object.hasOwn(RODS, id))])];
+  state.equippedRod = state.rods.includes(input.equippedRod) ? input.equippedRod : "starter";
+  state.lastIsland = canVisit(input.lastIsland, state.totalXp) ? input.lastIsland : "palm";
+  const collection = (Array.isArray(input.collection) ? input.collection : []).filter((id) => Object.hasOwn(FISH, id));
+  state.collection = [.../* @__PURE__ */ new Set([...collection, ...state.fish.map((f) => f.speciesId)])];
+  for (const rarity of Object.keys(RARITIES)) state.stats.rarityCounts[rarity] = Math.max(boundedInt(input.stats?.rarityCounts?.[rarity]), state.fish.filter((f) => FISH[f.speciesId].rarity === rarity).length);
+  const sum = Object.values(state.stats.rarityCounts).reduce((a, b) => a + b, 0);
+  if (sum > GAME.maxXp) for (const rarity of Object.keys(RARITIES)) state.stats.rarityCounts[rarity] = state.fish.filter((f) => FISH[f.speciesId].rarity === rarity).length;
+  state.stats.totalCaught = Math.max(state.fish.length, boundedInt(input.stats?.totalCaught), Math.min(GAME.maxXp, Object.values(state.stats.rarityCounts).reduce((a, b) => a + b, 0)));
+  const best = validCatch(input.stats?.bestCatch);
+  state.stats.bestCatch = [...best ? [best] : [], ...state.fish].reduce((old, fish) => !old || fish.weightGrams > old.weightGrams ? fish : old, null);
+  return state;
+}
 
 // js/errors.js
 var GameError = class extends Error {
@@ -131,6 +159,13 @@ var MESSAGES = Object.freeze({
   ONLINE_UNAVAILABLE: "\u041E\u043D\u043B\u0430\u0439\u043D \u04AF\u0439\u043B\u0447\u0438\u043B\u0433\u044D\u044D \u0445\u0430\u0440\u0430\u0430\u0445\u0430\u043D \u0445\u043E\u043B\u0431\u043E\u0433\u0434\u043E\u043E\u0433\u04AF\u0439 \u0431\u0430\u0439\u043D\u0430.",
   FULLSCREEN_UNAVAILABLE: "Browser \u0431\u04AF\u0442\u044D\u043D \u0434\u044D\u043B\u0433\u044D\u0446 \u043D\u044D\u044D\u0445\u0438\u0439\u0433 \u0437\u04E9\u0432\u0448\u04E9\u04E9\u0440\u0441\u04E9\u043D\u0433\u04AF\u0439. \u0422\u043E\u0433\u043B\u043E\u043B\u0442 \u04AF\u0440\u0433\u044D\u043B\u0436\u0438\u043B\u043D\u044D.",
   AUTH_REQUIRED: "\u041E\u043D\u043B\u0430\u0439\u043D profile \u043D\u044D\u0432\u0442\u044D\u0440\u0441\u044D\u043D\u0433\u04AF\u0439. \u0425\u043E\u043B\u0431\u043E\u043B\u0442\u043E\u043E \u0448\u0430\u043B\u0433\u0430\u0430\u0434 \u0434\u0430\u0445\u0438\u043D \u043E\u0440\u043E\u043B\u0434\u043E\u043E\u0440\u043E\u0439.",
+  AUTH_POPUP_BLOCKED: "\u041D\u044D\u0432\u0442\u0440\u044D\u0445 \u0446\u043E\u043D\u0445 \u0445\u0430\u0430\u0433\u0434\u043B\u0430\u0430. Browser \u0434\u044D\u044D\u0440 popup \u0437\u04E9\u0432\u0448\u04E9\u04E9\u0440\u04E9\u04E9\u0434 \u0434\u0430\u0445\u0438\u043D \u0434\u0430\u0440\u0430\u0430\u0440\u0430\u0439.",
+  AUTH_CANCELLED: "\u041D\u044D\u0432\u0442\u0440\u044D\u0445 \u0446\u043E\u043D\u0445\u044B\u0433 \u0445\u0430\u0430\u0441\u0430\u043D \u044D\u0441\u0432\u044D\u043B \u0445\u0443\u0433\u0430\u0446\u0430\u0430 \u0434\u0443\u0443\u0441\u0441\u0430\u043D \u0431\u0430\u0439\u043D\u0430. \u0414\u0430\u0445\u0438\u043D \u043E\u0440\u043E\u043B\u0434\u043E\u043E\u0440\u043E\u0439.",
+  AUTH_FAILED: "Account \u043D\u044D\u0432\u0442\u044D\u0440\u0441\u044D\u043D\u0433\u04AF\u0439. Google account-\u0430\u0430 \u0441\u043E\u043D\u0433\u043E\u043E\u0434 \u0434\u0430\u0445\u0438\u043D \u043E\u0440\u043E\u043B\u0434\u043E\u043E\u0440\u043E\u0439.",
+  IMPORT_UNAVAILABLE: "\u042D\u043D\u044D account \u0430\u043B\u044C \u0445\u044D\u0434\u0438\u0439\u043D \u0430\u0445\u0438\u0446\u0442\u0430\u0439 \u0431\u0430\u0439\u043D\u0430. Local \u0445\u0430\u0434\u0433\u0430\u043B\u0430\u043B\u0442\u0430\u0430\u0440 \u0434\u0430\u0440\u0436 \u0441\u043E\u043B\u0438\u0445\u0433\u04AF\u0439.",
+  IMPORT_EMPTY: "\u0428\u0438\u043B\u0436\u04AF\u04AF\u043B\u044D\u0445 Local \u0430\u0445\u0438\u0446 \u0430\u043B\u0433\u0430 \u0431\u0430\u0439\u043D\u0430.",
+  INVALID_SAVE: "\u0425\u0430\u0434\u0433\u0430\u043B\u0441\u0430\u043D \u0430\u0445\u0438\u0446\u044B\u043D \u043C\u044D\u0434\u044D\u044D\u043B\u044D\u043B \u0445\u04AF\u0447\u0438\u043D\u0433\u04AF\u0439 \u0431\u0430\u0439\u043D\u0430.",
+  IMPORT_SUCCESS: "\u0410\u0445\u0438\u0446 account-\u0434 \u0448\u0438\u043B\u0436\u043B\u044D\u044D. \u0418\u0436\u0438\u043B Google account-\u0430\u0430\u0440 \u04E9\u04E9\u0440 \u0442\u04E9\u0445\u04E9\u04E9\u0440\u04E9\u043C\u0436\u04E9\u04E9\u0441 \u04AF\u0440\u0433\u044D\u043B\u0436\u043B\u04AF\u04AF\u043B\u044D\u044D\u0440\u044D\u0439.",
   FRIEND_NOT_FOUND: "\u042D\u043D\u044D code-\u0442\u043E\u0439 \u043D\u0430\u0439\u0437 \u043E\u043B\u0434\u0441\u043E\u043D\u0433\u04AF\u0439.",
   INVALID_FRIEND_CODE: "Friend code \u043D\u044C 12 \u0442\u044D\u043C\u0434\u044D\u0433\u0442 \u0431\u0430\u0439\u043D\u0430.",
   SELF_REQUEST: "\u04E8\u04E9\u0440\u0438\u0439\u0433\u04E9\u04E9 \u043D\u0430\u0439\u0437\u0430\u0430\u0440 \u043D\u044D\u043C\u044D\u0445 \u0431\u043E\u043B\u043E\u043C\u0436\u0433\u04AF\u0439.",
@@ -213,5 +248,6 @@ export {
   canVisit,
   createInitialState,
   levelForXp,
+  normalizeState,
   sampleFish
 };

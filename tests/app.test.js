@@ -52,3 +52,7 @@ test('actual input and service complete a fishing then selling cycle once',async
 test('disposing the app detaches snapshots from the view',async()=>{
   const s=setup();s.app.dispose();const count=s.rendered.length;await s.service.updateProfile({name:'new name',avatar:1});assert.equal(s.rendered.length,count);
 });
+test('an invalid service switch cannot replace the current playable service',async()=>{
+  const s=setup();await assert.rejects(s.app.setService(null));assert.equal(s.app.getService(),s.service);
+  const next=createLocalService({storage:memoryStorage()});next.isActive=()=>false;await assert.rejects(s.app.setService(next));assert.equal(s.app.getService(),s.service);s.app.dispose();
+});

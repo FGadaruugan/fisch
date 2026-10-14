@@ -57,27 +57,28 @@ Branch-based Pages ашигласан ч root HTML нь `web/` дахь dependen
 
 Local ахиц browser-ийн `localStorage`-д хадгалагдана. Browser data арилгах, private mode, өөр төхөөрөмж ашиглах үед ижил local ахиц баталгаагүй. Storage боломжгүй бол тухайн session-д тоглолт үргэлжилж мэдэгдэл гарна. Гэмтсэн save-ээс зөвшөөрөгдсөн утгуудыг сэргээж, хүчингүй загас/савааг хасна.
 
-## Онлайн Top / Friends
+## Account, cloud хадгалалт, Top / Friends
 
-**Одоогоор dedicated Fisch backend тохируулагдаагүй.** Local тоглолт бүрэн тусдаа ажиллана. Online button нь хоосон тохиргоонд unavailable төлөв харуулна; хиймэл тоглогч/найз/рейтинг үүсгэхгүй.
+Fisch нь хэрэглэгчийн сонгосон **Mini-3Dgame** Supabase project (`ozbcmjcawpnbxfnkvscd`) болон түүний Google Auth-ийг хамт ашиглана. Game data нь зөвхөн `fisch_` хүснэгт/функцэд хадгалагдана. Mini-3Dgame-ийн tables, RPC, triggers, Auth provider тохиргоог өөрчлөхгүй.
 
-Кодод guest identity, серверийн XP/coin/загас, idempotent commands, Top 30 (XP/тоо/жин), өөрийн rank, friend code, хүсэлт илгээх/зөвшөөрөх/татгалзах/цуцлах, найз хасах, 90 секундын online төлөв бэлдсэн. Энэ нь shared-world multiplayer биш. Local ахицыг online ranking руу хуулдаггүй. Online guest identity нь browser session-д хадгалагдана; sign out/data clear/өөр төхөөрөмжөөс сэргээх баталгаа байхгүй.
+1. Одоогийн Local ахицтай **хуучин холбоос, browser дээрээ** Profile → **Google-ээр нэвтрэх** дарна.
+2. Mini-3Dgame-д ашигладаг Google account-аа сонгоно. Хоосон Fisch account дээр Local XP, coin, collection болон Backpack-ийн тоотой preview гарна.
+3. **Одоогийн ахицаа шилжүүлэх** дарна. Сервер нэг удаа хуулна; эх Local save үлдэнэ. Account аль хэдийн тоглосон/ахицтай бол хуучин save-аар дарж солихгүй.
+4. GitHub Pages болон өөр төхөөрөмжөөс ижил Google account-аар нэвтрээд Account аяллаа үргэлжлүүлнэ. Account save нь browser origin-оос тусдаа.
 
-Сервер загас/reward-ийг сонгож, хамгийн бага загасчлах хугацааг хянадаг. Reel input-ийн сервер replay нь энэ хувилбарын scope-д ороогүй; автомат client амжилттай outcome илгээх боломжтой тул өрсөлдөөнт ranking-д нэмэлт input verification/anti-bot ажил шаардлагатай.
+Нэвтрэх popup нь `https://fgadaruugan.github.io/fisch/account.html` руу очно. Энэ нь Mini-3Dgame-ийн Auth Site URL-тай ижил GitHub origin; Supabase ижил origin доторх өөр path руу redirect зөвшөөрдөг. Popup нь `source`, origin болон нэг удаагийн nonce-оо шалгаж зөвхөн эхэлсэн тоглоомын цонх руу session дамжуулна. Google token эсвэл service key дамжуулахгүй; Supabase session-ийг тухайн client Auth.getUser-ээр дахин баталгаажуулна. Callback ажиллах үед browser popup зөвшөөрсөн байх шаардлагатай. Private Site-ийн audience хэвээр үлдэнэ.
 
-Dedicated Supabase project-ийг эзэмшигчийн сонгосон organization болон үнийг баталгаажуулсны дараа үүсгэнэ. Бусад тоглоомын project-д энэ schema-г бүү ажиллуул.
+Account-аас **Гарах** нь тухайн Fisch browser-ийн session-ээс гаргана. Local аяллын save болон бусад төхөөрөмжийн ахицыг устгахгүй. Сүлжээ тасарвал client баталгаажаагүй reward нэмэхгүй; серверийн revision болон operation receipt нь retry/зэрэг ажиллаж буй цонхны давхар award/spend-ийг хамгаална.
 
-1. Supabase Dashboard → Authentication → Settings → **Allow anonymous sign-ins** асаана.
-2. Dedicated project-ийн SQL Editor-д `supabase/schema.sql` ажиллуулна. Энэ нь шинэ schema setup; давтаж run хийх migration биш.
-3. Supabase CLI суулгаад `supabase --help`, `supabase functions deploy --help` шалгаж project-доо `fisch-api` deploy хийнэ. Browser JWT шалгах `verify_jwt = true` хэвээр байна; handler нь Auth.getUser-ээр дахин баталгаажуулна. `npm run sync:server` нь browser болон серверийн catalogue/rules-ийг нэг эхээс гаргана.
-4. `js/online-config.js`-д **project URL + sb_publishable_ key** оруулна. Service-role/secret key-г browser source-д хэзээ ч хийхгүй. Server runtime нь `SUPABASE_SERVICE_ROLE_KEY` эсвэл server-only `FISCH_SERVICE_KEY` ашиглана. Хүсвэл `FISCH_ALLOWED_ORIGINS` server secret-д deployment origin-уудаа comma-аар тусгаарлана.
-5. Auth/Database advisors ажиллуулж, доорх live smoke test-ийг dedicated project дээр ажиллуулна. Harness нь 3 шинэ guest profile үүсгэдэг; token log хийхгүй. Live шалгалтгүйгээр online service ажиллаж байна гэж бүү үз.
+**Top** нь сервер дээр шинээр олсон XP, загасны тоо, жингээр эрэмбэлнэ. Шилжүүлсэн Local ахиц account-ын тоглолт/collection-д үлдэнэ; тэр ахицаас Top оноо үүсгэхгүй. Friends нь Fisch-ийн friend code, request/list/online status-ийг ашиглана; энэ нь shared-world multiplayer биш.
 
-```sh
-node tests/online-smoke.mjs --phase all
-```
+### Backend
 
-URL/key-г `FISCH_SUPABASE_URL`, `FISCH_PUBLISHABLE_KEY` environment variable-аар мөн өгч болно. Schema-ийн хүссэн migration filename-ийг зохиогоогүй; migration history ашиглах бол CLI-ийн `migration new` / `db pull` help-ийг шалган canonical schema-гаас үүсгэнэ.
+`supabase/schema.sql` нь шинэ Fisch namespace-ийн schema. Үүнийг Mini-3Dgame-ийн үндсэн schema файлтай хольж run хийхгүй. Live provisioning нь native migration-тай; shared project дээр anonymous sign-in асаах шаардлагагүй. `fisch-api` нь origin allowlist болон **Auth.getUser JWT verification**-ийг хүсэлт бүрт хэрэгжүүлдэг. Modern Supabase signing keys-д зориулан gateway `verify_jwt=false`; handler нь баталгаажаагүй token-оор database/game command ажиллуулахгүй.
+
+Browser config нь зөвхөн project URL болон `sb_publishable_` key. Service-role/secret key frontend болон `dist/`-д байхгүй. `npm run sync:server` нь browser/server catalogue ба save validation-ийг нэг эхээс гаргана.
+
+Local/PGlite tests нь account transfer, RLS, transactional retry, server-earned Top ба popup source/origin/nonce хамгаалалтыг шалгана. Live database checks нь transaction rollback хийж test progress үлдээхгүй. Browser/GPU болон Google login-ийн бодит төхөөрөмжийн QA энэ build орчинд боломжгүй.
 
 ## Кодын бүтэц ба шалгалт
 

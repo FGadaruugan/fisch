@@ -96,7 +96,10 @@ export function createApp({service,fishing,input,worldFactory,view}) {
   }
   function setVisible(value){visible=!!value;held=false;previousAction=false;fishing.setPaused(!visible);syncInput();}
   async function setService(next){
-    if(pendingFinish)await pendingFinish;cancelActive();unsubscribe();service=next;replaceScene(next.getSnapshot().lastIsland);bind();mode='lobby';panel=null;showCurrent();
+    if(!next||typeof next.getSnapshot!=='function'||next.isActive?.()===false)throw new GameError('AUTH_REQUIRED');
+    if(pendingFinish)await pendingFinish;
+    if(next.isActive?.()===false)throw new GameError('AUTH_REQUIRED');
+    const snapshot=next.getSnapshot();cancelActive();unsubscribe();service=next;replaceScene(snapshot.lastIsland);bind();mode='lobby';panel=null;showCurrent();
   }
   bind();showCurrent();
   return{play,openPanel,closePanel,travel,dispatch,tick,setVisible,setService,handleFinish,getScene:()=>scene,getService:()=>service,getState:()=>({mode,panel,visible,busy:isBusy()}),dispose(){if(disposed)return;cancelActive();disposed=true;unsubscribe();scene.dispose();input.dispose();}};
