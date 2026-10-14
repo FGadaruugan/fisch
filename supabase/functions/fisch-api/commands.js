@@ -1,10 +1,10 @@
-import {GAME,sampleFish,canVisit,createInitialState,applyGameMutation,GameError} from './shared-game.js';
+import {GAME,sampleFish,canVisit,createInitialState,normalizeState,applyGameMutation,GameError} from './shared-game.js';
 const allowed=new Map([
-  ['bootstrap',['profile']],['start_cast',['islandId']],['finish_cast',['ticketId','outcome']],['cancel_cast',['ticketId']],
+  ['bootstrap',['profile']],['import_local',['snapshot']],['start_cast',['islandId']],['finish_cast',['ticketId','outcome']],['cancel_cast',['ticketId']],
   ['sell_fish',['ids']],['buy_rod',['rodId']],['equip_rod',['rodId']],['travel',['islandId']],['update_profile',['name','avatar']]
 ]);
 export const canonical=value=>JSON.stringify(value,(_key,item)=>item&&typeof item==='object'&&!Array.isArray(item)?Object.fromEntries(Object.entries(item).sort(([a],[b])=>a.localeCompare(b))):item);
-const publicReply=({snapshot,revision,friendCode,result})=>({ok:true,snapshot,revision,friendCode,result});
+const publicReply=({snapshot,revision,friendCode,result,canImport,importedFromLocal})=>({ok:true,snapshot,revision,friendCode,result,canImport,importedFromLocal});
 const secureRng=()=>crypto.getRandomValues(new Uint32Array(1))[0]/4294967296;
 export async function runGameCommand({ownerId,action,operationId,payload={}},{database,now=Date.now,rng=secureRng,id=()=>crypto.randomUUID()}={}){
   try{
@@ -17,6 +17,13 @@ export async function runGameCommand({ownerId,action,operationId,payload={}},{da
       return publicReply(await database.bootstrap(ownerId,initial));
     }
     const signature=canonical({action,payload});
+    if(action==='import_local'){
+      const raw=payload.snapshot;
+      if(!raw||typeof raw!=='object'||Array.isArray(raw)||raw.version!==1)throw new GameError('INVALID_SAVE');
+      const snapshot=normalizeState(raw);
+      if(!snapshot.coins&&!snapshot.totalXp&&!snapshot.stats.totalCaught&&!snapshot.fish.length&&!snapshot.collection.length&&snapshot.rods.length===1)throw new GameError('IMPORT_EMPTY');
+      return publicReply(await database.importLocal(ownerId,operationId,signature,snapshot));
+    }
     const previous=await database.receipt(ownerId,operationId);
     if(previous){if(previous.signature!==signature)throw new GameError('OPERATION_CONFLICT');return publicReply({...await database.read(ownerId),result:previous.result});}
     for(let attempt=0;attempt<3;attempt++){

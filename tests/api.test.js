@@ -18,3 +18,14 @@ test('HTTP API rejects invalid bodies and disallowed configured origins',async()
   assert.equal((await handler(request('x'.repeat(16385)))).status,413);
   assert.equal((await handler(request('{}','https://other.example'))).status,403);
 });
+test('the API accepts a full backpack transfer but retains the smaller limit for ordinary commands',async()=>{
+  const handler=createApiHandler({verifyUser:async()=>({id:'owner'}),game:async()=>({ok:true}),social:async()=>({ok:true})});
+  const body=JSON.stringify({action:'import_local',payload:{snapshot:{version:1,padding:'x'.repeat(25000)}}});
+  const request=action=>new Request('https://api.example',{method:'POST',headers:{authorization:'Bearer token'},body:body.replace('import_local',action)});
+  assert.equal((await handler(request('import_local'))).status,200);assert.equal((await handler(request('bootstrap'))).status,413);
+});
+test('an account-bound request with a newly switched JWT cannot mutate the new account',async()=>{
+  let mutations=0;const handler=createApiHandler({verifyUser:async()=>({id:'B'}),game:async()=>{mutations++;return {ok:true};},social:async()=>({ok:true})});
+  const request=new Request('https://api.example',{method:'POST',headers:{authorization:'Bearer token-B','x-fisch-owner':'A'},body:JSON.stringify({action:'import_local'})});
+  assert.equal((await handler(request)).status,401);assert.equal(mutations,0);
+});

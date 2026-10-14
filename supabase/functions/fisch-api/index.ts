@@ -13,5 +13,5 @@ Deno.serve(createApiHandler({
   verifyUser:async(token:string)=>{const {data,error}=await client.auth.getUser(token);return error?null:data.user;},
   game:command=>runGameCommand(command,{database}),
   social:command=>runSocialCommand(command,{database}),
-  allowedOrigins:(Deno.env.get('FISCH_ALLOWED_ORIGINS')||'').split(',').map(s=>s.trim()).filter(Boolean)
+  allowedOrigins:(Deno.env.get('FISCH_ALLOWED_ORIGINS')||'https://fgadaruugan.github.io,https://fisch-tides.hulanganbaatar834.chatgpt.site').split(',').map(s=>s.trim()).filter(Boolean)
 }));

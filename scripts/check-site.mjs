@@ -15,7 +15,8 @@ for(const dir of ['js','scripts','tests','supabase/functions'])for(const path of
   for(const match of source.matchAll(/(?:\bfrom\s*|\bimport\s*\(\s*|\bimport\s*)(['"])(\.[^'"]+)\1/g))await access(resolve(importRoot,match[2]));
   count++;
 }
-const html=await readFile(resolve(root,'index.html'),'utf8'),ids=[...html.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]);
+const pages=await Promise.all(['index.html','account.html'].map(file=>readFile(resolve(root,file),'utf8')));
+const html=pages.join('\n'),ids=[...pages[0].matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]);
 if(new Set(ids).size!==ids.length)throw new Error('Duplicate HTML IDs');
 for(const match of html.matchAll(/\b(?:src|href)="([^"#]+)"/g)){if(!/^(?:https?:|data:)/.test(match[1]))await access(resolve(root,match[1]));}
 // The root HTML is also served by branch-based Pages; its runtime must be self-contained.
@@ -27,5 +28,5 @@ for(const file of ['js/main.js','js/ui.js','js/lobby.js']){
   const source=await readFile(resolve(root,file),'utf8');
   for(const match of source.matchAll(/\b(?:byId|id)\(['"]([^'"]+)['"]\)/g))if(!ids.includes(match[1]))throw new Error(`${file}: missing HTML id ${match[1]}`);
 }
-await build({absWorkingDir:root,entryPoints:['js/main.js'],bundle:true,format:'esm',platform:'browser',splitting:true,outdir:resolve(root,'dist'),write:false,logLevel:'silent'});
+await build({absWorkingDir:root,entryPoints:['js/main.js','js/account-callback.js'],bundle:true,format:'esm',platform:'browser',splitting:true,outdir:resolve(root,'dist'),write:false,logLevel:'silent'});
 console.log(`Checked ${count} JS/TS files, ${ids.length} HTML IDs, imports, assets and browser bundle.`);

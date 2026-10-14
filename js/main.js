@@ -13,11 +13,15 @@ import {normalizeSettings,createFramePacer} from './performance.js';
 import {ONLINE_CONFIG} from './online-config.js';
 import {prepareSocialRefresh} from './ui/social-state.js';
 import {createFullscreenControl} from './fullscreen.js';
+import {createPopupLogin} from './account-popup.js';
+import {createIdentityGuard} from './account-identity.js';
 
 const byId=id=>document.getElementById(id),SETTINGS_KEY='fisch3d.settings.v1';
 let settings;try{settings=normalizeSettings(JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}'));}catch{settings=normalizeSettings();}
 let app,graphics,currentScene,audio,socialService=null,onlineService=null,onlineClient=null,refreshGeneration=0,animationId=0;
 let socialState={connected:false,metric:'xp',friends:[],requests:{incoming:[],outgoing:[]},leaderboard:null},heartbeatTimer=null;
+let accountClientPromise,accountClient,currentAuthUser=null,onlineOwner=null,identityTransition=null,accountSigning=false,authSubscription,connectionQueue=Promise.resolve();
+const identityGuard=createIdentityGuard();
 const view=createUI({document,onCommand:command,onPhase:phase=>audio?.phase(phase),onCatch:caught=>{audio?.catch();currentScene?.rig.showCatch(caught);}});
 const fullscreen=createFullscreenControl({document,button:byId('fullscreenButton'),onResize:()=>graphics?.resize(),onUnavailable:()=>view.showNotice('FULLSCREEN_UNAVAILABLE')});
 audio=createAudio(()=>settings.volume);
@@ -65,16 +69,66 @@ function worldFactory(islandId){
   };
   currentScene=context;return context;
 }
-async function connectOnline(){
+function syncAccountView(){
+  const local=localService.getSnapshot(),hasProgress=local.coins||local.totalXp||local.stats.totalCaught||local.fish.length||local.collection.length||local.rods.length>1;
+  view.setAccount({user:currentAuthUser?{email:currentAuthUser.email}:null,connected:app?.getService().mode==='online',...(onlineService?.getAccountState()||{canImport:false,importedFromLocal:false}),local:hasProgress?local:null});
+}
+function getAccountClient(){
+  if(!accountClientPromise)accountClientPromise=import('./services/account.js').then(module=>{
+    accountClient=module.createAccountClient(ONLINE_CONFIG);
+    authSubscription=accountClient.auth.onAuthStateChange((event,session)=>{
+      const owner=session?.user?.id||null,changed=identityGuard.observe(owner);
+      if(changed){
+        if(currentAuthUser?.id!==owner)currentAuthUser=null;
+        syncAccountView();
+        if(event==='SIGNED_OUT'||(onlineOwner&&owner!==onlineOwner))queueMicrotask(()=>void disconnectOnline().catch(error=>view.showNotice(error?.code||'NETWORK_ERROR')));
+        if(event==='SIGNED_IN'&&!accountSigning)queueMicrotask(()=>void connectOnline());
+      }
+    }).data.subscription;
+    return {client:accountClient,verifiedAccount:module.verifiedAccount};
+  }).catch(error=>{accountClientPromise=null;throw error;});
+  return accountClientPromise;
+}
+function disconnectOnline(){
+  if(identityTransition)return identityTransition;
+  refreshGeneration++;if(heartbeatTimer)clearInterval(heartbeatTimer);heartbeatTimer=null;
+  const previous=onlineService,previousSocial=socialService;onlineService=null;onlineOwner=null;socialService=null;
+  previous?.dispose();previousSocial?.dispose();
+  socialState={connected:false,metric:'xp',friends:[],requests:{incoming:[],outgoing:[]},leaderboard:null};
+  view.setBusy(true,'identity');
+  identityTransition=(async()=>{
+    if(app?.getService().mode==='online')await app.setService(localService);
+    view.setConnection('local');view.setSocial(socialState);syncAccountView();
+  })().finally(()=>{identityTransition=null;view.setBusy(false,'identity');});
+  return identityTransition;
+}
+function connectOnline(){
+  const work=connectionQueue.then(()=>establishOnlineConnection());connectionQueue=work.catch(()=>{});return work;
+}
+async function establishOnlineConnection(){
   if(!ONLINE_CONFIG.url||!ONLINE_CONFIG.publishableKey){view.showNotice('ONLINE_UNAVAILABLE');return;}
   view.setBusy(true,'online');
   try{
-    const {createOnlineService,createSocialService}=await import('./services/online.js');
-    if(!onlineService){const created=await createOnlineService({config:ONLINE_CONFIG,profile:localService.getSnapshot().profile});onlineService=created.service;onlineClient=created.client;socialService=createSocialService(created.client,ONLINE_CONFIG);socialState.friendCode=created.friendCode;}
-    onlineClient.auth.startAutoRefresh();await onlineService.refresh();await app.setService(onlineService);
+    if(identityTransition)await identityTransition;
+    const {client,verifiedAccount}=await getAccountClient(),user=await verifiedAccount(client);
+    if(!user){currentAuthUser=null;syncAccountView();await app.dispatch('open',{panel:'profile'});return;}
+    const ticket=identityGuard.capture(user.id);
+    currentAuthUser=user;
+    const {createOnlineService,createSocialService}=await identityGuard.run(ticket,()=>import('./services/online.js'));
+    if(onlineOwner&&onlineOwner!==user.id)await identityGuard.run(ticket,()=>disconnectOnline());
+    if(!onlineService){
+      const created=await identityGuard.run(ticket,()=>createOnlineService({client,expectedOwner:user.id,config:ONLINE_CONFIG,profile:localService.getSnapshot().profile}),value=>value.service.dispose());
+      if(created.service.ownerId!==user.id){created.service.dispose();throw {code:'AUTH_REQUIRED'};}
+      onlineService=created.service;onlineClient=created.client;onlineOwner=user.id;socialService=createSocialService(created.client,{...ONLINE_CONFIG,ownerId:user.id});socialState.friendCode=created.friendCode;
+      onlineService.subscribe(()=>syncAccountView());
+    }
+    const service=onlineService,activeSocial=socialService;
+    onlineClient.auth.startAutoRefresh();await identityGuard.run(ticket,()=>service.refresh());
+    if(app.getService()!==service)await identityGuard.run(ticket,()=>app.setService(service));
     view.setConnection('online');socialState.connected=true;view.setSocial(socialState);
+    syncAccountView();
     if(heartbeatTimer)clearInterval(heartbeatTimer);
-    const heartbeat=()=>{if(!document.hidden&&app.getService().mode==='online'){void socialService.heartbeat().catch(()=>{});if(view.getPanel()==='friends')void refreshSocial({panel:'friends'});}};heartbeat();heartbeatTimer=setInterval(heartbeat,30000);
+    const heartbeat=()=>{if(!document.hidden&&onlineService===service&&app.getService()===service){void activeSocial.heartbeat().catch(()=>{});if(view.getPanel()==='friends')void refreshSocial({panel:'friends'});}};heartbeat();heartbeatTimer=setInterval(heartbeat,30000);
   }catch(error){view.showNotice(error?.code||'NETWORK_ERROR');}finally{view.setBusy(false,'online');}
 }
 async function refreshSocial(payload={}){
@@ -95,9 +149,29 @@ async function command(name,payload={}){
     try{localStorage.setItem(SETTINGS_KEY,JSON.stringify(settings));}catch{view.showNotice('SAVE_UNAVAILABLE');}return;
   }
   if(!app)return;
+  if(name==='account_signin'){
+    const login=createPopupLogin({window,callbackURL:ONLINE_CONFIG.callbackURL});
+    accountSigning=true;view.setBusy(true,'account');
+    try{const [session,{client,verifiedAccount}]=await Promise.all([login,getAccountClient()]);const {error}=await client.auth.setSession(session);if(error)throw {code:'AUTH_FAILED'};currentAuthUser=await verifiedAccount(client);if(!currentAuthUser)throw {code:'AUTH_REQUIRED'};await connectOnline();await app.dispatch('open',{panel:'profile'});}
+    catch(error){view.showNotice(error?.code||'AUTH_FAILED');}
+    finally{accountSigning=false;syncAccountView();view.setBusy(false,'account');}return;
+  }
+  if(name==='account_signout'){
+    view.setBusy(true,'account');
+    try{await disconnectOnline();const {client}=await getAccountClient();const {error}=await client.auth.signOut({scope:'local'});if(error)throw {code:'NETWORK_ERROR'};currentAuthUser=null;syncAccountView();await app.dispatch('open',{panel:'profile'});}
+    catch(error){view.showNotice(error?.code||'NETWORK_ERROR');}finally{view.setBusy(false,'account');}return;
+  }
+  if(name==='account_refresh'){
+    view.setBusy(true,'account');try{const service=onlineService,ticket=identityGuard.capture(service?.ownerId);await identityGuard.run(ticket,()=>service.refresh());syncAccountView();}catch(error){view.showNotice(error?.code||'NETWORK_ERROR');}finally{view.setBusy(false,'account');}return;
+  }
+  if(name==='account_import'){
+    view.setBusy(true,'account');
+    try{const service=onlineService;if(!service||!service.getAccountState().canImport)throw {code:'IMPORT_UNAVAILABLE'};const ticket=identityGuard.capture(service.ownerId),snapshot=localService.getSnapshot();await identityGuard.run(ticket,()=>service.importLocal(snapshot));await identityGuard.run(ticket,()=>app.setService(service));view.setConnection('online');syncAccountView();await app.dispatch('open',{panel:'profile'});view.showNotice('IMPORT_SUCCESS');}
+    catch(error){view.showNotice(error?.code||'NETWORK_ERROR');}finally{view.setBusy(false,'account');}return;
+  }
   if(name==='play'&&window.matchMedia('(pointer: coarse)').matches)void fullscreen.enter();
   if(name==='connect_online'){await connectOnline();return;}
-  if(name==='switch_local'){refreshGeneration++;if(heartbeatTimer)clearInterval(heartbeatTimer);heartbeatTimer=null;onlineClient?.auth.stopAutoRefresh();await app.setService(localService);view.setConnection('local');view.setSocial({connected:false,friends:[],requests:{incoming:[],outgoing:[]},leaderboard:null});return;}
+  if(name==='switch_local'){refreshGeneration++;if(heartbeatTimer)clearInterval(heartbeatTimer);heartbeatTimer=null;onlineClient?.auth.stopAutoRefresh();await app.setService(localService);view.setConnection('local');view.setSocial({connected:false,friends:[],requests:{incoming:[],outgoing:[]},leaderboard:null});syncAccountView();return;}
   if(name==='social_refresh'){await refreshSocial(payload);return;}
   if(name==='copy_friend_code'){try{await navigator.clipboard.writeText(socialState.friendCode||'');}catch{view.showNotice('UNKNOWN');}return;}
   if(name.startsWith('friend_')){
@@ -112,6 +186,7 @@ async function command(name,payload={}){
     }catch(error){view.showNotice(error?.code||'NETWORK_ERROR');}
     finally{view.setBusy(false,'social');}return;
   }
+  if(name==='open'&&payload.panel==='profile')syncAccountView();
   await app.dispatch(name,payload);
 }
 try{
@@ -119,6 +194,8 @@ try{
   const input=createInput({window,canvas:byId('viewport'),joystick:byId('joystick'),action:byId('fishingAction'),jump:byId('jumpAction'),interact:byId('interactAction')});
   const fishing=createFishingController({onFinish:event=>app?.handleFinish(event)});
   app=createApp({service:localService,fishing,input,worldFactory,view});view.finishLoading();
+  syncAccountView();void getAccountClient().then(async({client,verifiedAccount})=>{currentAuthUser=await verifiedAccount(client);syncAccountView();if(currentAuthUser)await connectOnline();}).catch(error=>view.showNotice(error?.code||'NETWORK_ERROR'));
+  window.addEventListener('focus',()=>{if(!accountSigning&&app.getService().mode==='online')void command('account_refresh');});
   let statsTime=0;
   function frame(now){
     animationId=requestAnimationFrame(frame);if(!app.getState().visible)return;
@@ -131,5 +208,5 @@ try{
   function visibility(value){app.setVisible(value);pacer.reset();graphics.resetMonitor();if(value)audio.resume();else audio.suspend();}
   document.addEventListener('visibilitychange',()=>visibility(!document.hidden));window.addEventListener('blur',()=>visibility(false));window.addEventListener('focus',()=>visibility(!document.hidden));
   byId('viewport').addEventListener('webglcontextlost',event=>{event.preventDefault();visibility(false);view.showError('Графикийн холболт түр тасарлаа. Ахиц хадгалагдсан. Дахин оролдоорой.');});
-  window.addEventListener('beforeunload',()=>{cancelAnimationFrame(animationId);if(heartbeatTimer)clearInterval(heartbeatTimer);fullscreen.dispose();app.dispose();graphics.dispose();audio.dispose();view.dispose();},{once:true});
+  window.addEventListener('beforeunload',()=>{cancelAnimationFrame(animationId);if(heartbeatTimer)clearInterval(heartbeatTimer);authSubscription?.unsubscribe();onlineService?.dispose();fullscreen.dispose();app.dispose();graphics.dispose();audio.dispose();view.dispose();},{once:true});
 }catch(error){console.error('Fisch startup failed',error);view.showError('3D график нээгдсэнгүй. WebGL 2 дэмждэг browser дээр дахин оролдоорой.');}

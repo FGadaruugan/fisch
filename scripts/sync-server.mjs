@@ -3,7 +3,7 @@ import {fileURLToPath} from 'node:url';
 const root=fileURLToPath(new URL('../',import.meta.url));
 await build({stdin:{contents:`export {GAME,FISH,RODS,RARITIES,sampleFish} from './js/data.js';
 export {canVisit,levelForXp} from './js/progression.js';
-export {createInitialState} from './js/save.js';
+export {createInitialState,normalizeState} from './js/save.js';
 export {applyGameMutation} from './js/game-rules.js';
 export {GameError} from './js/errors.js';`,resolveDir:root,sourcefile:'canonical-game.js'},
   outfile:root+'supabase/functions/fisch-api/shared-game.js',bundle:true,format:'esm',platform:'neutral',target:'es2022',

@@ -1,4 +1,4 @@
--- Fisch server contract. Apply to the dedicated game project with a database owner.
+-- Fisch server contract. Namespaced tables may share the Mini-3Dgame project.
 -- Client roles can read permitted rows; every mutation goes through the verified Edge API.
 begin;
 
@@ -16,6 +16,7 @@ create table public.fisch_state (
     and (snapshot->>'totalXp')::bigint between 0 and 1000000000
     and jsonb_array_length(snapshot->'fish')<=100),
   revision bigint not null default 0 check (revision>=0),
+  imported_at timestamptz,
   updated_at timestamptz not null default now()
 );
 create table public.fisch_scores (
@@ -91,6 +92,7 @@ grant all on public.fisch_profiles,public.fisch_state,public.fisch_scores,public
 create function public.fisch_read_game(p_owner uuid) returns jsonb
 language sql security invoker set search_path='' as $$
   select jsonb_build_object('snapshot',s.snapshot,'revision',s.revision,'friendCode',p.friend_code,
+    'importedFromLocal',s.imported_at is not null,'canImport',s.revision=0 and s.imported_at is null and t.user_id is null,
     'ticket',case when t.expires_at>now() then t.ticket else null end)
   from public.fisch_state s join public.fisch_profiles p using(user_id)
   left join public.fisch_sessions t using(user_id) where s.user_id=p_owner
@@ -106,6 +108,28 @@ begin
   insert into public.fisch_state(user_id,snapshot) values(p_owner,p_initial) on conflict(user_id) do nothing;
   insert into public.fisch_scores(user_id) values(p_owner) on conflict(user_id) do nothing;
   return public.fisch_read_game(p_owner);
+end $$;
+
+-- Import is an atomic copy into a pristine account; its local rewards do not enter Top.
+create function public.fisch_import_local(p_owner uuid,p_operation text,p_signature text,p_snapshot jsonb) returns jsonb
+language plpgsql security invoker set search_path='' as $$
+declare current_state public.fisch_state; receipt public.fisch_operations;
+begin
+  select * into current_state from public.fisch_state where user_id=p_owner for update;
+  if not found then raise exception 'NOT_INITIALIZED'; end if;
+  select * into receipt from public.fisch_operations where user_id=p_owner and operation_id=p_operation;
+  if found then
+    if receipt.signature<>p_signature then raise exception 'OPERATION_CONFLICT'; end if;
+    return public.fisch_read_game(p_owner)||jsonb_build_object('ok',true,'result',receipt.result);
+  end if;
+  if current_state.revision<>0 or current_state.imported_at is not null
+    or exists(select 1 from public.fisch_sessions where user_id=p_owner)
+    or (current_state.snapshot->>'totalXp')::bigint<>0 or (current_state.snapshot->>'coins')::bigint<>0
+    or jsonb_array_length(current_state.snapshot->'fish')<>0 then raise exception 'IMPORT_UNAVAILABLE'; end if;
+  update public.fisch_state set snapshot=p_snapshot,revision=revision+1,imported_at=now(),updated_at=now() where user_id=p_owner;
+  update public.fisch_profiles set name=p_snapshot->'profile'->>'name',avatar=(p_snapshot->'profile'->>'avatar')::smallint where user_id=p_owner;
+  insert into public.fisch_operations(user_id,operation_id,signature,result) values(p_owner,p_operation,p_signature,'{"imported":true}'::jsonb);
+  return public.fisch_read_game(p_owner)||jsonb_build_object('ok',true,'result',jsonb_build_object('imported',true));
 end $$;
 
 -- Row lock + revision prevents two tabs from spending/awarding against the same old state.
@@ -124,10 +148,11 @@ begin
   if current_state.revision<>p_revision then raise exception 'CONFLICT_RETRY'; end if;
   update public.fisch_state set snapshot=p_snapshot,revision=revision+1,updated_at=now() where user_id=p_owner;
   update public.fisch_profiles set name=p_snapshot->'profile'->>'name',avatar=(p_snapshot->'profile'->>'avatar')::smallint where user_id=p_owner;
-  update public.fisch_scores set total_xp=(p_snapshot->>'totalXp')::bigint,
-    total_caught=(p_snapshot->'stats'->>'totalCaught')::bigint,
-    best_grams=coalesce((p_snapshot->'stats'->'bestCatch'->>'weightGrams')::int,0),
-    best_species=p_snapshot->'stats'->'bestCatch'->>'speciesId' where user_id=p_owner;
+  update public.fisch_scores set
+    total_xp=total_xp+greatest(0,(p_snapshot->>'totalXp')::bigint-(current_state.snapshot->>'totalXp')::bigint),
+    total_caught=total_caught+greatest(0,(p_snapshot->'stats'->>'totalCaught')::bigint-(current_state.snapshot->'stats'->>'totalCaught')::bigint),
+    best_species=case when coalesce((p_result->>'weightGrams')::int,0)>best_grams then p_result->>'speciesId' else best_species end,
+    best_grams=greatest(best_grams,coalesce((p_result->>'weightGrams')::int,0)) where user_id=p_owner;
   if p_ticket is null or p_ticket='null'::jsonb then delete from public.fisch_sessions where user_id=p_owner;
   else insert into public.fisch_sessions(user_id,ticket,expires_at) values(p_owner,p_ticket,now()+interval '2 minutes')
     on conflict(user_id) do update set ticket=excluded.ticket,expires_at=excluded.expires_at;
@@ -223,10 +248,10 @@ begin
 end $$;
 
 -- Explicit function ACL: default PUBLIC EXECUTE would expose privileged owner parameters.
-revoke all on function public.fisch_read_game(uuid),public.fisch_bootstrap(uuid,jsonb),
+revoke all on function public.fisch_read_game(uuid),public.fisch_bootstrap(uuid,jsonb),public.fisch_import_local(uuid,text,text,jsonb),
   public.fisch_commit_state(uuid,text,text,bigint,jsonb,jsonb,jsonb),public.fisch_social_command(uuid,text,text,jsonb),
   public.fisch_heartbeat(uuid),public.fisch_social_read(uuid,text,text) from public,anon,authenticated;
-grant execute on function public.fisch_read_game(uuid),public.fisch_bootstrap(uuid,jsonb),
+grant execute on function public.fisch_read_game(uuid),public.fisch_bootstrap(uuid,jsonb),public.fisch_import_local(uuid,text,text,jsonb),
   public.fisch_commit_state(uuid,text,text,bigint,jsonb,jsonb,jsonb),public.fisch_social_command(uuid,text,text,jsonb),
   public.fisch_heartbeat(uuid),public.fisch_social_read(uuid,text,text) to service_role;
 commit;

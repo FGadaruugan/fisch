@@ -6,10 +6,10 @@ import {gzipSync} from 'node:zlib';
 const root=fileURLToPath(new URL('../',import.meta.url)),dist=resolve(root,'dist');
 await import('./sync-server.mjs');
 await rm(dist,{recursive:true,force:true});await mkdir(dist,{recursive:true});
-await build({absWorkingDir:root,entryPoints:['js/main.js'],outdir:dist,entryNames:'js/main',chunkNames:'js/chunks/[name]-[hash]',
+await build({absWorkingDir:root,entryPoints:['js/main.js','js/account-callback.js'],outdir:dist,entryNames:'js/[name]',chunkNames:'js/chunks/[name]-[hash]',
   bundle:true,splitting:true,format:'esm',platform:'browser',target:'es2022',minify:true,legalComments:'linked',logLevel:'silent'});
-for(const file of ['index.html','css','assets'])await cp(resolve(root,file),resolve(dist,file),{recursive:true});
-await writeFile(resolve(dist,'index.html'),(await readFile(resolve(dist,'index.html'),'utf8')).replace('./web/js/main.js','./js/main.js'));
+for(const file of ['index.html','account.html','css','assets'])await cp(resolve(root,file),resolve(dist,file),{recursive:true});
+for(const file of ['index.html','account.html'])await writeFile(resolve(dist,file),(await readFile(resolve(dist,file),'utf8')).replace('./web/js/','./js/'));
 await cp(resolve(root,'THIRD_PARTY.md'),resolve(dist,'CREDITS.txt'));
 async function inspect(dir){let total=0,gzip=0,files=0;for(const e of await readdir(dir,{withFileTypes:true})){const path=resolve(dir,e.name);if(e.isDirectory()){const v=await inspect(path);total+=v.total;gzip+=v.gzip;files+=v.files;}else{const content=await readFile(path);total+=content.length;gzip+=gzipSync(content).length;files++;if(/SUPABASE_SERVICE_ROLE_KEY|sb_secret_[A-Za-z0-9_-]{24,}/.test(content.toString()))throw new Error('Privileged backend configuration leaked into static output');}}return {total,gzip,files};}
 const report=await inspect(dist);await stat(resolve(dist,'index.html'));

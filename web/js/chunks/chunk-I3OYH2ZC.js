@@ -1,0 +1,1 @@
+var t=Object.freeze({url:"https://ozbcmjcawpnbxfnkvscd.supabase.co",publishableKey:"sb_publishable_NwsEZxIt2CUhhf3SMzkhbA_-ZIoxVVm",callbackURL:"https://fgadaruugan.github.io/fisch/account.html",origins:Object.freeze(["https://fgadaruugan.github.io","https://fisch-tides.hulanganbaatar834.chatgpt.site"])});export{t as a};

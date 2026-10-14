@@ -1,8 +1,6 @@
 project_id = "fisch"
 
-[auth]
-enable_anonymous_sign_ins = true
-
 [functions.fisch-api]
-# Browser calls include a signed-in guest JWT; the handler also verifies it with Auth.getUser.
-verify_jwt = true
+# Modern project JWTs are verified in the handler with Auth.getUser on every request.
+# Anonymous calls are rejected before game or database commands run.
+verify_jwt = false

@@ -2,11 +2,13 @@ import {FISH,RARITIES} from '../data.js';
 import {levelProgress,formatKg} from '../progression.js';
 import {fishIcon} from '../models/fish.js';
 import {h,button,badge,stat,AVATARS,money} from './dom.js';
-export function renderProfile(state,mode='local') {
+import {renderAccount} from './account.js';
+export function renderProfile(state,mode='local',account={}) {
   const progress=levelProgress(state.totalXp),best=state.stats.bestCatch;
   const root=h('div',{class:'profile-panel'});
   root.append(h('section',{class:'profile-hero'},h('div',{class:'large-avatar'},AVATARS[state.profile.avatar]),h('div',{},h('p',{class:'eyebrow'},mode==='online'?'ONLINE VOYAGER':'LOCAL VOYAGER'),h('h3',{},state.profile.name),h('span',{class:'level-label'},'LEVEL '+progress.level))));
-  root.append(button(mode==='online'?'Local аялалд очих':'Онлайн аялал нээх',mode==='online'?'switch_local':'connect_online',{},'btn subtle'));
+  if(mode==='online')root.append(button('Local аялалд очих','switch_local',{},'btn subtle'));
+  root.append(renderAccount(account,mode));
   root.append(h('div',{class:'xp-section'},h('div',{class:'xp-caption'},h('b',{},'Дараагийн эрэг рүү'),h('span',{},money(progress.current)+' / '+money(progress.needed)+' XP')),h('div',{class:'xp-track'},h('i',{style:{width:(progress.fraction*100)+'%'}}))));
   root.append(h('div',{class:'stats-grid'},stat(money(state.stats.totalCaught),'Барьсан загас'),stat(state.collection.length+'/25','Нээгдсэн species'),stat('✦ '+money(state.coins),'Coin'),stat(best?formatKg(best.weightGrams)+' kg':'—','Хамгийн хүнд')));
   if(best){const f=FISH[best.speciesId];root.append(h('div',{class:'personal-best'},h('img',{src:fishIcon(f.id),alt:f.name}),h('div',{},h('p',{class:'eyebrow'},'PERSONAL BEST'),h('h3',{},f.name),badge(f.rarity,RARITIES[f.rarity].color)),h('b',{},formatKg(best.weightGrams)+' kg')));}

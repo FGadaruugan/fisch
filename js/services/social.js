@@ -2,7 +2,7 @@ import {createRetryTransport,clientTransport} from './transport.js';
 import {GameError} from '../errors.js';
 export function createSocialService(clientOrOptions,config={}){
   const options=clientOrOptions?.transport||clientOrOptions?.client?clientOrOptions:{client:clientOrOptions,config};
-  const rpc=createRetryTransport(options.transport||clientTransport(options.client),{delay:options.delay});
+  const rpc=createRetryTransport(options.transport||clientTransport(options.client,{ownerId:options.ownerId||options.config?.ownerId}),{delay:options.delay});
   const call=async(action,payload={},id)=>(await rpc.request(action,payload,id)).result;
   return {
     listFriends:()=>call('friends'),listRequests:()=>call('requests'),
