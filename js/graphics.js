@@ -21,7 +21,13 @@ export function createGraphics(T,canvas,rawSettings={},onQuality=()=>{}) {
     resize();
   }
   function resize(){const width=Math.max(1,canvas.clientWidth||globalThis.innerWidth||1),height=Math.max(1,canvas.clientHeight||globalThis.innerHeight||1);renderer.setSize(width,height,false);camera.aspect=width/height;camera.updateProjectionMatrix();}
-  function applySettings(partial) {const next=normalizeSettings({...settings,...partial});if(Object.hasOwn(partial,'timeOfDay'))hour=next.timeOfDay;settings=next;applyQuality();}
+  function applySettings(partial) {
+    const next=normalizeSettings({...settings,...partial}),rebuild=next.quality!==settings.quality||next.renderScale!==settings.renderScale;
+    if(Object.hasOwn(partial,'timeOfDay'))hour=next.timeOfDay;
+    settings=next;
+    if(rebuild)applyQuality();
+    else{renderer.shadowMap.enabled=settings.shadows;renderer.toneMappingExposure=settings.exposure;camera.far=settings.viewDistance;camera.updateProjectionMatrix();world?.setQuality(quality,settings);}
+  }
   applyQuality();
   return{
     scene,camera,renderer,

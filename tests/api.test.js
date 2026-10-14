@@ -1,0 +1,20 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {createApiHandler} from '../supabase/functions/fisch-api/handler.js';
+test('HTTP API derives identity from verified JWT and never from request owner fields',async()=>{
+  let command;
+  const handler=createApiHandler({verifyUser:async token=>token==='valid-token'?{id:'verified-owner'}:null,
+    game:async value=>{command=value;return {ok:true,snapshot:{}};},social:async()=>({ok:true,result:[]})});
+  const request=body=>new Request('https://example.test/api',{method:'POST',headers:{Authorization:'Bearer valid-token','content-type':'application/json'},body:JSON.stringify(body)});
+  assert.equal((await handler(request({action:'bootstrap',operationId:'op-1',ownerId:'foreign-owner',payload:{}}))).status,200);
+  assert.equal(command.ownerId,'verified-owner');
+  const noAuth=new Request('https://example.test/api',{method:'POST',body:'{}'});assert.equal((await handler(noAuth)).status,401);
+  const badToken=new Request('https://example.test/api',{method:'POST',headers:{Authorization:'Bearer expired'},body:'{}'});assert.equal((await handler(badToken)).status,401);
+});
+test('HTTP API rejects invalid bodies and disallowed configured origins',async()=>{
+  const handler=createApiHandler({verifyUser:async()=>({id:'a'}),game:async()=>({ok:true}),social:async()=>({ok:true}),allowedOrigins:['https://game.example']});
+  const request=(body,origin='https://game.example')=>new Request('https://api.example',{method:'POST',headers:{authorization:'Bearer token',origin},body});
+  assert.equal((await handler(request('not JSON'))).status,400);
+  assert.equal((await handler(request('x'.repeat(16385)))).status,413);
+  assert.equal((await handler(request('{}','https://other.example'))).status,403);
+});

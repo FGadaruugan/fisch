@@ -25,6 +25,7 @@ export function createPlayer(THREE,world) {
     group:character.group,position,rodTip:character.rodTip,
     tick(input,dt,phase='idle'){stepPlayerState(state,input,dt,activeWorld);character.group.position.set(position.x,position.y,position.z);character.group.rotation.y=state.yaw;character.animate(dt,state.speed,phase);},
     reset(next){activeWorld=next;Object.assign(position,next.spawn);state.velocityY=0;state.grounded=true;state.yaw=0;character.group.position.set(position.x,position.y,position.z);},
+    faceDirection(direction){state.yaw=Math.atan2(direction.x,direction.z);character.group.rotation.y=state.yaw;},
     getCameraPose(yaw,pitch,distance){const target={x:position.x,y:position.y+1.5,z:position.z};return{target,position:{x:target.x+Math.sin(yaw)*Math.cos(pitch)*distance,y:target.y+Math.sin(pitch)*distance,z:target.z+Math.cos(yaw)*Math.cos(pitch)*distance}};},
     dispose(){disposeObject(character.group);}
   };

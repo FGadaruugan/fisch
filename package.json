@@ -4,13 +4,23 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "sync:server": "node scripts/sync-server.mjs",
+    "pretest": "node scripts/sync-server.mjs",
     "test": "node --test tests/*.test.js",
     "check": "node scripts/check-site.mjs",
     "build": "node scripts/build.mjs",
     "package": "node scripts/build.mjs",
     "dev": "node scripts/serve.mjs"
   },
-  "engines": { "node": ">=22" },
-  "dependencies": { "three": "0.186.0" },
-  "devDependencies": { "esbuild": "0.28.2" }
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.117.3",
+    "three": "0.186.0"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.5.9",
+    "esbuild": "0.28.2"
+  }
 }

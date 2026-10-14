@@ -31,5 +31,5 @@ export function createCharacter(T,{shirt='#276c71',rod=true}={}) {
   const reel=mesh(new T.TorusGeometry(0.09,0.025,6,12),pants,rodGroup,0,-0.06,0.1);reel.rotation.y=Math.PI/2;
   const rodTip=new T.Object3D();rodTip.position.y=1.98;rodGroup.add(rodTip);rodGroup.visible=rod;
   let time=0;
-  return{group,rodTip,animate(dt,speed,phase){time+=dt*Math.max(speed,0.5);const fishing=['charging','waiting','bite','reeling'].includes(phase);const swing=speed>0.1?Math.sin(time*2.5)*0.5:0;legs[0].rotation.x=swing;legs[1].rotation.x=-swing;arms[0].rotation.x=-swing*0.65;arms[1].rotation.x=fishing?-0.85+Math.sin(time*3)*0.04:0.1-swing*0.5;rodGroup.rotation.x=fishing?0.2:-0.15;}};
+  return{group,rodTip,animate(dt,speed,phase){time+=dt*Math.max(speed,0.5);const fishing=['charging','waiting','bite','reeling'].includes(phase);const swing=speed>0.1?Math.sin(time*2.5)*0.5:0;legs[0].rotation.x=swing;legs[1].rotation.x=-swing;arms[0].rotation.x=-swing*0.65;arms[1].rotation.x=fishing?-0.85+Math.sin(time*3)*0.04:0.1-swing*0.5;rodGroup.rotation.x=fishing?1.7:-0.15;}};
 }
