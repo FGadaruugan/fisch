@@ -10,14 +10,14 @@ import {SAVE_KEY,createInitialState} from '../js/save.js';
 import {FISH} from '../js/data.js';
 const feature=await loadFeature('../js/app.js');
 const flush=()=>new Promise(resolve=>setImmediate(resolve));
-function setup({xp=0,initial}={}){
+function setup({xp=0,initial,favoriteStorage=memoryStorage()}={}){
   assert.equal(typeof feature.createApp,'function');
   const win=new EventTarget(),input=createInput({window:win}),service=createLocalService({storage:memoryStorage({[SAVE_KEY]:JSON.stringify(initial||{...createInitialState(),totalXp:xp})}),rng:()=>0});
   const notices=[],caught=[],rendered=[];let busy=false,app;
   const view={renderSnapshot:s=>rendered.push(s),renderFishing(){},showPanel(){},showNotice:c=>notices.push(c),showCatch:f=>caught.push(f),setBusy:v=>{busy=v;}};
   const fishing=createFishingController({onFinish:event=>app.handleFinish(event)});
   const factory=id=>{const world=createNavigationModel({islandId:id,totalXp:service.getSnapshot().totalXp}),p={x:world.center.x,y:2.2,z:world.center.z+world.radius*1.04};return{world,player:{position:p,motion:'walking'},setIsland:world.setIsland,setAccess:world.setAccess,update(){},dispose(){}};};
-  app=feature.createApp({service,fishing,input,worldFactory:factory,view});
+  app=feature.createApp({service,fishing,input,worldFactory:factory,view,favoriteStorage});
   const key=(code,down)=>{const e=new Event(down?'keydown':'keyup',{cancelable:true});Object.assign(e,{code,repeat:false});win.dispatchEvent(e);};
   return{app,service,fishing,input,notices,caught,rendered,key,get busy(){return busy;}};
 }
@@ -108,4 +108,31 @@ test('leaving the shrine or sitting in a boat invalidates a previously open trad
     if(motion==='walking')scene.player.position.x+=20;else scene.player.motion='sailing';
     await s.app.dispatch('trade_rod',{rodId:'eclipse'});assert.equal(s.service.getSnapshot().coins,200000);assert.equal(s.service.getSnapshot().fish.length,5);s.app.dispose();
   }
+});
+
+function favoriteState(){
+  return {...createInitialState(),fish:['keep','sell'].map(id=>({id,speciesId:'n01',islandId:'palm',weightGrams:100,caughtAt:new Date(0).toISOString()}))};
+}
+test('Sell All preserves a hearted specimen and credits only unhearted fish',async()=>{
+  const s=setup({initial:favoriteState()});s.app.play();
+  Object.assign(s.app.getScene().player.position,s.app.getScene().world.seller);
+  await s.app.dispatch('toggle_favorite',{id:'keep'});
+  assert.equal(s.rendered.at(-1).fish.find(f=>f.id==='keep').favorite,true);
+  await s.app.dispatch('sell_all');
+  assert.deepEqual(s.service.getSnapshot().fish.map(f=>f.id),['keep']);
+  assert.equal(s.service.getSnapshot().coins,1);
+  await s.app.dispatch('sell_all');
+  assert.deepEqual(s.notices,[],'all favorites is a harmless no-op');
+  await s.app.dispatch('toggle_favorite',{id:'keep'});
+  await s.app.dispatch('sell_all');assert.equal(s.service.getSnapshot().fish.length,0);s.app.dispose();
+});
+test('hearts survive reopening and stay isolated between local and online accounts',async()=>{
+  const favoriteStorage=memoryStorage(),s=setup({initial:favoriteState(),favoriteStorage});
+  await s.app.dispatch('toggle_favorite',{id:'keep'});s.app.dispose();
+  const reopened=setup({initial:favoriteState(),favoriteStorage});
+  assert.equal(reopened.rendered.at(-1).fish[0].favorite,true);
+  const other=createLocalService({storage:memoryStorage({[SAVE_KEY]:JSON.stringify(favoriteState())})});
+  other.mode='online';other.ownerId='other-account';await reopened.app.setService(other);
+  assert.equal(reopened.rendered.at(-1).fish[0].favorite,false);
+  await reopened.app.setService(reopened.service);assert.equal(reopened.rendered.at(-1).fish[0].favorite,true);reopened.app.dispose();
 });

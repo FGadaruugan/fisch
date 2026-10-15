@@ -19,7 +19,11 @@ export function renderBackpack(state,{tab='fish',rarity='all',sort='weight',merc
   else{
     const grid=h('div',{class:'fish-grid'});
     for(const caught of fish){const info=getCatchInfo(caught),color=info.color;
-      grid.append(h('article',{class:'fish-card',style:{'--accent':color}},
+      const heart=button(caught.favorite?'❤️':'🤍','toggle_favorite',{id:caught.id},'favorite-button'+(caught.favorite?' active':''));
+      heart.setAttribute('aria-pressed',String(!!caught.favorite));
+      heart.setAttribute('aria-label',info.name+(caught.favorite?' — Зүрхийг арилгах':' — Зүрхлэх'));
+      heart.setAttribute('title',caught.favorite?'Sell All-аас хамгаалагдсан':'Sell All-аас хамгаалах');
+      grid.append(h('article',{class:'fish-card',style:{'--accent':color}},heart,
         h('details',{class:'fish-detail','data-catch-id':caught.id},
           h('summary',{class:'fish-summary'},h('span',{class:'fish-image'},h('img',{src:fishIcon(info.speciesId),alt:'',loading:'lazy'}),badge(info.rarity,color)),h('b',{class:'fish-name'},info.name),h('span',{class:'fish-values'},h('b',{},info.kg+' kg'),h('span',{},'✦ '+money(info.value))),h('span',{class:'fish-expand'},'Дэлгэрэнгүй',h('i',{'aria-hidden':'true'},'+'))),
           h('dl',{class:'fish-details'},
@@ -31,8 +35,10 @@ export function renderBackpack(state,{tab='fish',rarity='all',sort='weight',merc
       ));
     }root.append(grid);
   }
-  const total=state.fish.reduce((sum,f)=>sum+fishPrice(f),0);
-  root.append(h('div',{class:'panel-summary'},h('div',{},h('small',{},'НИЙТ ҮНЭ'),h('b',{},'✦ '+money(total))),button('Бүгдийг зарах','sell_all',{},'btn primary',!merchant||!state.fish.length)));
+  const sellable=state.fish.filter(f=>!f.favorite);
+  const total=sellable.reduce((sum,f)=>sum+fishPrice(f),0);
+  root.append(h('div',{class:'panel-summary'},h('div',{},h('small',{},'ЗАРАХ ЗАГАСНЫ ҮНЭ'),h('b',{},'✦ '+money(total))),button('Бүгдийг зарах','sell_all',{},'btn primary',!merchant||!sellable.length)));
+  root.append(h('p',{class:'help-text'},'❤️ Зүрхэлсэн загас Бүгдийг зарах үед үлдэнэ. Тэмдэг энэ хөтөч дээр хадгалагдана.'));
   if(!merchant)root.append(h('p',{class:'help-text'},'Загасаа худалдаачны дэргэд очоод зарна.'));
   return root;
 }
