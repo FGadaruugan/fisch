@@ -1,4 +1,5 @@
-export const DEFAULT_SETTINGS=Object.freeze({quality:'auto',targetFps:60,renderScale:1,shadows:true,fog:true,particles:true,showStats:true,timeOfDay:10.5,dayCycle:true,exposure:1,viewDistance:1400,volume:0.35});
+import {GUI_DEFAULTS} from './gui.js';
+export const DEFAULT_SETTINGS=Object.freeze({quality:'auto',targetFps:60,renderScale:1,shadows:true,fog:true,particles:true,timeOfDay:10.5,dayCycle:true,exposure:1,viewDistance:1400,volume:0.35,...GUI_DEFAULTS});
 export const QUALITY_LEVELS=Object.freeze([
   {id:'low',label:'Low',density:0.3,lodDistance:90,shadowSize:512,pixelRatio:0.8,waterSegments:40},
   {id:'medium',label:'Medium',density:0.55,lodDistance:180,shadowSize:1024,pixelRatio:1,waterSegments:64},
@@ -11,7 +12,7 @@ export function normalizeSettings(raw={}) {
   if(['auto','low','medium','high','ultra'].includes(raw.quality))s.quality=raw.quality;
   if([0,30,60,90,120,144].includes(raw.targetFps))s.targetFps=raw.targetFps;
   for(const [key,min,max]of [['renderScale',0.6,1.5],['timeOfDay',0,24],['exposure',0.5,1.8],['viewDistance',500,2600],['volume',0,1]])if(Number.isFinite(raw[key]))s[key]=clamp(raw[key],min,max);
-  for(const key of ['shadows','fog','particles','showStats','dayCycle'])if(typeof raw[key]==='boolean')s[key]=raw[key];
+  for(const key of ['shadows','fog','particles','dayCycle',...Object.keys(GUI_DEFAULTS)])if(typeof raw[key]==='boolean')s[key]=raw[key];
   return s;
 }
 export function createFramePacer(target=60) {

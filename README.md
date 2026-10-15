@@ -31,6 +31,8 @@ Play дарсны дараа тавцангийн үзүүр эсвэл усан
 
 Settings → Quality **Auto / Low / Medium / High / Ultra**; FPS cap **30 / 60 / 90 / 120 / 144 / Uncapped**; render scale, харах зай, shadows, fog, particles, exposure, өдрийн цаг, day cycle, volume.
 
+Settings → **GUI · Дэлгэцийн мэдээлэл** дотор FPS/Hz, Coin, Local/Online төлөв, арлын нэр/цаг, савааны нэр, туслах бичвэр, keyboard заавар, барьсан загасны мэдэгдлийг тус бүр ON/OFF сонгоно. Шинэ GUI тохиргоо бүгд ON; сонголт энэ browser/төхөөрөмжид хадгалагдана. **Бүх GUI-г ON болгох** нь зөвхөн GUI сонголтуудыг сэргээнэ. Үндсэн цэс, удирдлагын товчнууд, fishing bar/дохио, алдаа/account мэдэгдэл байнга ON; тоглоомын хэвийн цэс/төлөвийн дагуу гарна.
+
 Auto нь үргэлжилсэн ачааллыг хэмжээд чанарыг тохируулна. FPS cap нь зурагдах давтамж; төхөөрөмжийн GPU/дэлгэцийн дээд хязгаарыг өсгөхгүй. HUD нь бодит rendered FPS, CPU frame time, draw calls/triangles харуулна. **RAF Hz** нь browser animation callback-ийн ойролцоо давтамж; дэлгэцийн физик refresh rate гэсэн баталгаа биш. Хөдөлгөөн болон загасчлалын simulation нь rendering cap-аас тусдаа.
 
 ## Ажиллуулах
