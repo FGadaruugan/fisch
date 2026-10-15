@@ -1,7 +1,8 @@
 import {FISH,RARITIES,RODS} from '../data.js';
-import {formatKg,fishPrice} from '../progression.js';
+import {fishPrice} from '../progression.js';
 import {fishIcon} from '../models/fish.js';
 import {h,button,empty,badge,money} from './dom.js';
+import {getCatchInfo} from './fish-info.js';
 
 export function renderBackpack(state,{tab='fish',rarity='all',sort='weight',merchant=false,onFilter}={}) {
   const root=h('div',{class:'backpack-panel'});
@@ -17,10 +18,15 @@ export function renderBackpack(state,{tab='fish',rarity='all',sort='weight',merc
   if(!fish.length)root.append(empty('Таны дараагийн гайхамшиг энд байна','Эргийн тавцангаас загас бариад Backpack-доо цуглуулаарай.'));
   else{
     const grid=h('div',{class:'fish-grid'});
-    for(const caught of fish){const species=FISH[caught.speciesId],color=RARITIES[species.rarity].color;
+    for(const caught of fish){const info=getCatchInfo(caught),color=info.color;
       grid.append(h('article',{class:'fish-card',style:{'--accent':color}},
-        h('div',{class:'fish-image'},h('img',{src:fishIcon(species.id),alt:species.name,loading:'lazy'}),badge(species.rarity,color)),
-        h('h3',{},species.name),h('div',{class:'fish-values'},h('b',{},formatKg(caught.weightGrams)+' kg'),h('span',{},'✦ '+money(fishPrice(caught)))),
+        h('details',{class:'fish-detail','data-catch-id':caught.id},
+          h('summary',{class:'fish-summary'},h('span',{class:'fish-image'},h('img',{src:fishIcon(info.speciesId),alt:'',loading:'lazy'}),badge(info.rarity,color)),h('b',{class:'fish-name'},info.name),h('span',{class:'fish-values'},h('b',{},info.kg+' kg'),h('span',{},'✦ '+money(info.value))),h('span',{class:'fish-expand'},'Дэлгэрэнгүй',h('i',{'aria-hidden':'true'},'+'))),
+          h('dl',{class:'fish-details'},
+            h('dt',{},'Загас'),h('dd',{},info.name),h('dt',{},'Жин'),h('dd',{},info.kg+' kg'),
+            h('dt',{},'Ховор байдал'),h('dd',{},badge(info.rarity,color)),h('dt',{},'Үнэ'),h('dd',{},'✦ '+money(info.value)),
+            h('dt',{},'Барьсан арал'),h('dd',{},info.islandName),h('dt',{},'Барьсан огноо'),h('dd',{},h('time',{datetime:info.caughtAt},info.dateLabel)))
+        ),
         button('Зарах','sell_fish',{id:caught.id},'btn subtle compact',!merchant)
       ));
     }root.append(grid);

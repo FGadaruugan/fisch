@@ -2,6 +2,12 @@
 
 A playable local and account-based 3D fishing game, delivered on the requested GitHub repository.
 
+## Profile and specimen details — 2026-10-15
+
+The active delivery target is FGadaruugan/fisch and its GitHub Pages game. Profile reads lifetime rarity counts and its saved personal-best price even after sale, and derives island access from canonical XP thresholds. Backpack cards use native details/summary disclosures with actual specimen name, kg, rarity, value, island and local catch date; unknown legacy dates are labeled unavailable. Selling remains a separate action. Open specimens and summary focus survive snapshot refresh, and summaries participate in the existing modal keyboard focus trap. The save/API contracts are unchanged.
+
+Profile also displays its equipped-rod Luck and normalized rarity selection odds for the current island. Unavailable tiers stay at zero; the rare-tier multiplier is applied before normalization, matching the existing sampler. These percentages describe selection; reel control determines capture success. New information panels use responsive layouts; actual hardware FPS still requires a device pass.
+
 ## Selectable GUI — 2026-10-15
 
 Settings exposes eight informational overlays with ON/OFF switches and a GUI-only restore action. All new preferences default ON and survive the existing versioned settings reload; the prior FPS preference is retained. Navigation, interactive controls, fishing feedback and critical notices are not optional. The visibility layer also refuses to hide a marked element containing controls. It uses a separate attribute so toggling a timed catch notice cannot reopen an expired notice or change normal lobby/play/fishing visibility. No account or gameplay data is changed.

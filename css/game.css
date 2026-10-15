@@ -135,6 +135,16 @@ input:not([type="range"]):not([type="radio"]):not([type="checkbox"]),select{bord
 .fish-values{display:flex;align-items:center;justify-content:space-between;font-size:9px;color:#849181;gap:5px;margin-bottom:12px}
 .fish-values b{font-size:14px;color:#305753;white-space:nowrap}
 .fish-card .btn{width:100%}
+.fish-summary{display:block;list-style:none;cursor:pointer;border-radius:5px}
+.fish-summary::-webkit-details-marker{display:none}
+.fish-summary:focus-visible{outline:3px solid #b79757;outline-offset:3px}
+.fish-name{display:block;font-size:13px;line-height:1.4;min-height:35px;margin:0 0 8px}
+.fish-expand{display:flex;align-items:center;justify-content:space-between;color:#668476;font-size:10px;padding:0 0 12px;gap:10px}
+.fish-expand i{font-style:normal;font-size:20px;transition:transform .15s}
+.fish-detail[open] .fish-expand i{transform:rotate(45deg)}
+.fish-details{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:10px 8px;margin:0 0 14px;padding-top:13px;border-top:1px solid var(--line);font-size:10px;line-height:1.6}
+.fish-details dt{color:#7d8d80}
+.fish-details dd{margin:0;text-align:right;color:#355e51;overflow-wrap:anywhere}
 .panel-summary{display:flex;align-items:center;justify-content:space-between;padding-top:20px;margin-top:18px;border-top:1px solid var(--line);gap:15px}
 .panel-summary small{display:block;font-size:8px;letter-spacing:1.4px;color:#819287;margin-bottom:6px}
 .panel-summary b{font-size:22px;color:#315b50}
@@ -175,7 +185,35 @@ input:not([type="range"]):not([type="radio"]):not([type="checkbox"]),select{bord
 .personal-best img{width:90px}
 .personal-best .eyebrow{font-size:7px;margin-bottom:4px}
 .personal-best h3{font-size:16px;margin-bottom:7px}
-.personal-best>b{margin-left:auto;font-size:22px;font-weight:500;color:#3f6658}
+.personal-best>div:not(.record-values){min-width:0;flex:1}
+.record-values{margin-left:auto;text-align:right;flex-shrink:0}
+.record-values b{display:block;font-size:clamp(15px,2vw,22px);font-weight:500;color:#3f6658}
+.record-values small{display:block;font-size:11px;margin-top:7px;color:#8c784b}
+.rarity-breakdown{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.rarity-stat{text-align:center;padding:15px 5px;border:1px solid #d8dfd0;border-top:2px solid var(--accent);border-radius:8px;background:#f7f5e9;min-width:0}
+.rarity-stat>b{display:block;font-size:clamp(16px,2vw,24px);font-weight:500;color:#355e51;margin:12px 0 5px;overflow-wrap:anywhere}
+.rarity-stat small{font-size:9px;color:#839182}
+.profile-islands{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.profile-island{padding:16px 13px;border:1px solid #d8dfd0;border-radius:9px;background:#f6f3e8;min-width:0}
+.profile-island.unlocked{border-top:3px solid var(--accent)}
+.profile-island.current{background:#e3ecdc;border-color:#86a68d}
+.profile-island>b{display:block;color:#365d51;font-size:14px;margin:10px 0 7px}
+.profile-island small,.island-status{font-size:9px;color:#7f8d7c;line-height:1.6}
+.profile-island.unlocked .island-status{color:#507b5e}
+.profile-island.locked{background:#eeeee4}
+.odds-panel{margin-top:24px;padding:18px;border:1px solid #d4ddce;border-radius:10px;background:#f7f5eb}
+.odds-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.odds-heading h3{font-size:14px;margin:0 0 7px;color:#365e51}
+.odds-heading p{font-size:10px;line-height:1.6;margin:0;color:#7d8e7d}
+.luck-pill{font-size:12px;font-weight:600;white-space:nowrap;color:#517050;border:1px solid #c8d7be;border-radius:20px;padding:9px 12px;background:#e4ecda}
+.odds-table{width:100%;border-collapse:collapse;margin-top:15px;font-size:11px}
+.odds-table th,.odds-table td{padding:10px 0;border-bottom:1px solid #dfe4d7;text-align:left}
+.odds-table th{font-weight:500;color:#7d8f7d}
+.odds-table td,.odds-table th:last-child{text-align:right}
+.odds-table td b{font-weight:600;color:#365e51}
+.odds-table td small{display:block;font-size:8px;color:#8d9889;margin-top:4px}
+.odds-table .unavailable{opacity:.65}
+@media(max-width:700px){.rarity-breakdown{grid-template-columns:repeat(2,minmax(0,1fr))}.rarity-stat:last-child{grid-column:span 2}.profile-islands{grid-template-columns:1fr}.section-heading{align-items:flex-start;gap:12px}.section-heading>span{font-size:9px;max-width:48%;text-align:right;line-height:1.6}.personal-best{gap:10px;padding:13px}.personal-best img{width:60px}.personal-best h3{font-size:13px}}
 .profile-form{padding:20px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin:20px 0}
 .profile-form>label{display:grid;gap:7px;font-size:10px;color:#718575}
 .profile-form input[name="name"]{max-width:360px;font-size:13px}
