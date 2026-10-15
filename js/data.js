@@ -18,12 +18,17 @@ export const RARITIES = freeze(Object.assign(Object.create(null),{
 export const RODS = freeze(Object.assign(Object.create(null),{
   starter:{id:'starter',name:'Driftwood Rod',description:'Таны анхны найдвартай саваа.',price:0,width:0.24,luck:1,color:'#a5825e'},
   river:{id:'river',name:'River Whisper',description:'Илүү өргөн удирдах бар, тайван таталт.',price:150,width:0.30,luck:1,color:'#60c9b5'},
-  ocean:{id:'ocean',name:'Ocean Sovereign',description:'Өргөн бар, ховор загасны сонголтын жин +35%.',price:650,width:0.36,luck:1.35,color:'#e7b34e'}
+  ocean:{id:'ocean',name:'Ocean Sovereign',description:'Өргөн бар, ховор загасны сонголтын жин +35%.',price:650,width:0.36,luck:1.35,color:'#e7b34e'},
+  jade:{id:'jade',name:'Jade Current',description:'Хаш чулуун бариул, тогтвортой удирдлага. Ховор загасны сонголтын жин ×1.75.',price:10000,width:0.40,luck:1.75,color:'#43b89a'},
+  temple:{id:'temple',name:'Temple Tide',description:'Эртний туурийн хүч. Ховор загасны сонголтын жин ×2.5.',price:50000,width:0.46,luck:2.5,color:'#c7a45c'},
+  eclipse:{id:'eclipse',name:'Eclipse Relic',description:'Таван өргөлөөс сэрсэн нууц саваа. Ховор загасны сонголтын жин ×3.5.',price:100000,width:0.52,luck:3.5,color:'#ad8de0',acquisition:'trade'}
 }));
+export const SECRET_TRADE=freeze({rodId:'eclipse',islandId:'sanctuary',level:7,price:100000,speciesIds:['n11','r09','l05','m03','u02'],offset:[-112,-76],radius:7});
 export const ISLANDS = freeze(Object.assign(Object.create(null),{
   palm:{id:'palm',name:'Palm Bay',subtitle:'Эхлэл бүхэн нэг эргээс',biome:'tropical',level:1,radius:180,center:[0,0],color:'#6cc9a8',sky:'#b1dfe0',sand:'#ead7ad',ground:'#638d4d',rock:'#8b9682',seed:1842},
   coral:{id:'coral',name:'Coral Reef',subtitle:'Шүрэн эргийн нууц',biome:'coral',level:3,radius:165,center:[-820,-650],color:'#ed998b',sky:'#d6d9e4',sand:'#f1c8b0',ground:'#798b5a',rock:'#aa6557',seed:8221},
-  frost:{id:'frost',name:'Frostpeak',subtitle:'Мөсөн доорх домог',biome:'alpine',level:5,radius:210,center:[650,-1120],color:'#9bcde2',sky:'#c4dce9',sand:'#dbe7e5',ground:'#91a5a6',rock:'#718892',seed:9543}
+  frost:{id:'frost',name:'Frostpeak',subtitle:'Мөсөн доорх домог',biome:'alpine',level:5,radius:210,center:[650,-1120],color:'#9bcde2',sky:'#c4dce9',sand:'#dbe7e5',ground:'#91a5a6',rock:'#718892',seed:9543},
+  sanctuary:{id:'sanctuary',name:'Sunken Sanctuary',subtitle:'Таван загас, мартагдсан нэг нууц',biome:'ruins',level:7,radius:225,center:[1070,580],color:'#90b8a1',sky:'#c1d6d0',sand:'#d8ceae',ground:'#557a69',rock:'#747e76',seed:6274}
 }));
 
 const rows = [
@@ -51,7 +56,12 @@ const rows = [
  ['l04','Starlight Ray','Legendary',10000,60000,'frost','ray','#556caa','#bbb9ee',1.7],
  ['m01','Phoenix Ray','Mythic',25000,120000,'coral','ray','#e99a62','#ffe3a1',1.9],
  ['m02','Frost Leviathan','Mythic',80000,400000,'frost','serpent','#62becd','#d7f4f5',0.8],
- ['u01','Abyssal Sovereign','???',150000,1000000,'frost','leviathan','#554987','#e889bf',1.5]
+ ['u01','Abyssal Sovereign','???',150000,1000000,'frost','leviathan','#554987','#e889bf',1.5],
+ ['n11','Mossfin Carp','Normal',1500,9000,'sanctuary','fish','#6d9c83','#d0d9a1',1.2],
+ ['r09','Jade Koi','Rare',4000,22000,'sanctuary','koi','#36ad97','#e6d9a3',1.4],
+ ['l05','Temple Arowana','Legendary',25000,140000,'sanctuary','fish','#b99c54','#f4dfa0',1.65],
+ ['m03','Spirit Serpent','Mythic',100000,500000,'sanctuary','serpent','#80bfc2','#e0c6f3',0.9],
+ ['u02','Eclipse Guardian','???',200000,1200000,'sanctuary','leviathan','#4b476b','#cfa0df',1.65]
 ];
 export const FISH = freeze(Object.assign(Object.create(null),Object.fromEntries(rows.map(([id,name,rarity,minGrams,maxGrams,islandId,family,color,accent,girth]) => [id,{id,name,rarity,minGrams,maxGrams,islandId,visual:{family,color,accent,girth}}]))));
 export const getFish = id => FISH[id] ?? null;

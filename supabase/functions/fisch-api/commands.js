@@ -1,7 +1,7 @@
 import {GAME,sampleFish,canVisit,createInitialState,normalizeState,applyGameMutation,GameError} from './shared-game.js';
 const allowed=new Map([
   ['bootstrap',['profile']],['import_local',['snapshot']],['start_cast',['islandId']],['finish_cast',['ticketId','outcome']],['cancel_cast',['ticketId']],
-  ['sell_fish',['ids']],['buy_rod',['rodId']],['equip_rod',['rodId']],['travel',['islandId']],['update_profile',['name','avatar']]
+  ['sell_fish',['ids']],['buy_rod',['rodId']],['trade_rod',['rodId','position']],['equip_rod',['rodId']],['travel',['islandId']],['update_profile',['name','avatar']]
 ]);
 export const canonical=value=>JSON.stringify(value,(_key,item)=>item&&typeof item==='object'&&!Array.isArray(item)?Object.fromEntries(Object.entries(item).sort(([a],[b])=>a.localeCompare(b))):item);
 const publicReply=({snapshot,revision,friendCode,result,canImport,importedFromLocal})=>({ok:true,snapshot,revision,friendCode,result,canImport,importedFromLocal});
@@ -53,7 +53,7 @@ export async function runGameCommand({ownerId,action,operationId,payload={}},{da
         }
         ticket=null;
       }else{
-        if(action==='equip_rod'&&ticket)throw new GameError('FISHING_BUSY');
+        if(['equip_rod','trade_rod'].includes(action)&&ticket)throw new GameError('FISHING_BUSY');
         const next=applyGameMutation(snapshot,{action,payload},{now:()=>time});snapshot=next.state;result=next.result;
         if(action==='travel')ticket=null;
       }

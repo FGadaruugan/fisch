@@ -5,7 +5,7 @@ import {stepPlayerState} from '../js/player.js';
 const feature=await loadFeature('../js/navigation.js');
 const make=xp=>{assert.equal(typeof feature.createNavigationModel,'function');return feature.createNavigationModel({islandId:'palm',totalXp:xp});};
 test('one navigation terrain contains all real islands and bounded open water',()=>{
-  const world=make(1600);
+  const world=make(3600);
   for(const model of Object.values(world.models)){
     assert.equal(world.heightAt(model.spawn.x,model.spawn.z),model.spawn.y);
     assert.equal(world.canOccupy(model.spawn.x,model.spawn.z),true);

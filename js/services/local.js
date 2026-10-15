@@ -47,6 +47,7 @@ export function createLocalService({storage,now=Date.now,rng=Math.random,onStora
     async cancelCast(id){if(ticket?.id===id)ticket=null;},
     async sellFish(ids,id){return mutate('sell_fish',{ids:[...new Set(ids)].sort()},id);},
     async buyRod(rodId,id){return mutate('buy_rod',{rodId},id);},
+    async tradeRod(rodId,position,id){if(ticket)throw new GameError('FISHING_BUSY');return mutate('trade_rod',{rodId,position:{x:position?.x,z:position?.z}},id);},
     async equipRod(rodId){if(ticket)throw new GameError('FISHING_BUSY');return mutate('equip_rod',{rodId});},
     async travel(islandId){if(!canVisit(islandId,state.totalXp))throw new GameError('ISLAND_LOCKED');ticket=null;return mutate('travel',{islandId});},
     async updateProfile(profile){return mutate('update_profile',profile);},

@@ -2,6 +2,7 @@ import {ISLANDS} from './data.js';
 import {createTerrainModel,seededRandom,smooth} from './terrain.js';
 import {createCharacter,disposeObject} from './models/character.js';
 import {batchStaticMeshes} from './models/batching.js';
+import {createSanctuary} from './models/sanctuary.js';
 
 function chunkGeometry(T,model,x0,z0,size,cells){
   const positions=[],colors=[],indices=[],sand=new T.Color(model.meta.sand),grass=new T.Color(model.meta.ground),rock=new T.Color(model.meta.rock),snow=new T.Color('#e7f1ed');
@@ -59,6 +60,7 @@ export function createWorld(T,islandId,{distantIslands=true,decorativeBoat=true}
   const ferryman=createCharacter(T,{shirt:'#567f98',rod:false});ferryman.group.position.set(model.ferry.x,model.ferry.y,model.ferry.z);group.add(ferryman.group);
   batchStaticMeshes(T,merchant.group,{recursive:true});batchStaticMeshes(T,ferryman.group,{recursive:true});
   const ferryLabel=label(T,'Завь дуудах');if(ferryLabel){ferryLabel.position.set(model.ferry.x,model.ferry.y+3.35,model.ferry.z);group.add(ferryLabel);}
+  if(model.secret){const ruins=createSanctuary(T,model);group.add(ruins.group);cameraColliders.push(...ruins.cameraColliders);const name=label(T,'Туурийн сахиул');if(name){name.position.set(model.secret.x,model.secret.y+3.5,model.secret.z);group.add(name);}}
   for(const p of [model.seller,model.ferry]){const ring=new T.Mesh(new T.RingGeometry(1.6,1.85,32),new T.MeshBasicMaterial({color:'#e8d59f',transparent:true,opacity:0.45,side:T.DoubleSide,depthWrite:false}));ring.rotation.x=-Math.PI/2;ring.position.set(p.x,p.y+0.035,p.z);group.add(ring);}
   const boat=new T.Group();boat.visible=decorativeBoat;boat.position.set(cx+14,0.7,cz+r*1.01);group.add(boat);
   const boatMesh=(g,m,x,y,z)=>{const node=new T.Mesh(g,m);node.position.set(x,y,z);node.castShadow=true;boat.add(node);return node;};
@@ -78,7 +80,7 @@ export function createWorld(T,islandId,{distantIslands=true,decorativeBoat=true}
   let tries=0;
   while(trees.length<560&&tries++<12000){
     const x=cx+(random()*2-1)*r,z=cz+(random()*2-1)*r,h=model.heightAt(x,z),lx=x-cx,lz=z-cz;
-    if(!model.isWalkable(x,z)||model.onPier(x,z)||h<2.1||h>58||(Math.abs(lx)<13&&lz>0)||model.buildings.some(([bx,bz,w,d])=>Math.abs(lx-bx)<w&&Math.abs(lz-bz)<d))continue;
+    if(!model.isWalkable(x,z)||model.onPier(x,z)||model.isClearing(x,z)||h<2.1||h>58||(Math.abs(lx)<13&&lz>0)||model.buildings.some(([bx,bz,w,d])=>Math.abs(lx-bx)<w&&Math.abs(lz-bz)<d))continue;
     trees.push({x,z,h,size:0.65+random()*0.75,angle:random()*Math.PI*2});
   }
   const trunks=trees.map(p=>({x:p.x,y:p.h+3*p.size,z:p.z,sx:0.26*p.size,sy:6*p.size,sz:0.26*p.size}));
@@ -94,11 +96,11 @@ export function createWorld(T,islandId,{distantIslands=true,decorativeBoat=true}
     instance(new T.ConeGeometry(1,1,9),material('#d7e5de'),caps.length,caps);
   }else{
     const crowns=trees.map(p=>({x:p.x,y:p.h+6*p.size,z:p.z,sx:p.size*2.4,sy:p.size*1.2,sz:p.size*2.4}));
-    instance(new T.IcosahedronGeometry(1,1),material('#a3a269'),crowns.length,crowns);
+    instance(new T.IcosahedronGeometry(1,1),material(model.meta.biome==='ruins'?'#547d6e':'#a3a269'),crowns.length,crowns);
   }
   for(let i=0;i<1700;i++){
     const x=cx+(random()*2-1)*r,z=cz+(random()*2-1)*r,h=model.heightAt(x,z);
-    if(!model.isWalkable(x,z)||model.onPier(x,z)||h<1.5)continue;
+    if(!model.isWalkable(x,z)||model.onPier(x,z)||model.isClearing(x,z)||h<1.5)continue;
     if(i<420){const size=0.6+random()*2.1;rocks.push({x,y:h+size*0.35,z,sx:size,sy:size*(0.45+random()*0.5),sz:size*0.9,ry:random()*6.28});}
     else if(h<30)grass.push({x,y:h,z,sx:0.35+random()*0.4,sy:0.4+random()*0.8,sz:0.4,ry:random()*6.28});
   }

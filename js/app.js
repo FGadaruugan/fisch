@@ -11,6 +11,7 @@ export function createApp({service,fishing,input,worldFactory,view}) {
   const changeBusy=delta=>{busyCount=Math.max(0,busyCount+delta);view.setBusy(isBusy());};
   const fail=error=>view.showNotice(error?.code||'UNKNOWN');
   const near=point=>!!point&&Math.hypot(scene.player.position.x-point.x,scene.player.position.z-point.z)<7;
+  const nearSecret=()=>mode==='play'&&scene.player.motion==='walking'&&near(scene.world.secret);
   function bind(){unsubscribe=service.subscribe(snapshot=>{if(!disposed){scene.setAccess?.(snapshot.totalXp);view.renderSnapshot(snapshot);}});}
   function cancelActive(){
     generation++;held=false;previousAction=false;fishing.cancel();input.releaseAll();
@@ -56,7 +57,7 @@ export function createApp({service,fishing,input,worldFactory,view}) {
     return work;
   }
   function play(){if(disposed)return;mode='play';panel=null;showCurrent();}
-  function openPanel(name){if(disposed)return;cancelActive();panel=name;showCurrent();}
+  function openPanel(name){if(disposed)return;if(name==='secret'&&!nearSecret()){view.showNotice('TRADE_LOCATION_REQUIRED');return;}cancelActive();panel=name;showCurrent();}
   function closePanel(){panel=null;showCurrent();}
   async function travel(islandId){
     if(disposed)return;
@@ -88,6 +89,11 @@ export function createApp({service,fishing,input,worldFactory,view}) {
       case 'cancel':cancelActive();break;
       case 'travel':await travel(payload.islandId);break;
       case 'buy_rod':await run(()=>service.buyRod(payload.rodId,operationId()));break;
+      case 'trade_rod': {
+        if(panel!=='secret'||!nearSecret()){view.showNotice('TRADE_LOCATION_REQUIRED');break;}
+        const actor=service,position={x:scene.player.position.x,z:scene.player.position.z};
+        const success=await run(()=>actor.tradeRod(payload.rodId,position,operationId()));if(success&&!disposed&&actor===service)view.showNotice('TRADE_SUCCESS');break;
+      }
       case 'equip_rod':await run(()=>service.equipRod(payload.rodId));break;
       case 'update_profile':await run(()=>service.updateProfile(payload));break;
       case 'sell_fish':case 'sell_all':
@@ -102,7 +108,7 @@ export function createApp({service,fishing,input,worldFactory,view}) {
     if(values.cancelPressed){if(panel)closePanel();else if(fishing.active)cancelActive();else openPanel('settings');}
     if(values.backpackPressed)openPanel('backpack');
     if(mode==='play'&&!panel){
-      if(values.interactPressed&&!isBusy()&&!fishing.active){const interaction=scene.interact?.();if(interaction){if(interaction.code)view.showNotice(interaction.code);}else if(near(scene.world.seller))openPanel('shop');else if(near(scene.world.ferry))openPanel('map');}
+      if(values.interactPressed&&!isBusy()&&!fishing.active){const interaction=scene.interact?.();if(interaction){if(interaction.code)view.showNotice(interaction.code);}else if(nearSecret())openPanel('secret');else if(near(scene.world.seller))openPanel('shop');else if(near(scene.world.ferry))openPanel('map');}
       if(values.actionHeld!==previousAction){previousAction=values.actionHeld;if(values.actionHeld)void fishPress();else{held=false;fishing.release();}}
     }
     fishing.tick(dt);
@@ -110,7 +116,7 @@ export function createApp({service,fishing,input,worldFactory,view}) {
     scene.update({...values,freeze:locked,moveX:locked?0:values.moveX,moveZ:locked?0:values.moveZ,jumpPressed:!locked&&values.jumpPressed},dt,fishing.getView(),mode);
     if(!locked)checkArrival();
     view.renderFishing(fishing.getView());
-    view.renderContext?.({...scene.getNavigation?.(destination),islandId:scene.world.islandId,position:scene.player.position,merchant:near(scene.world.seller),ferry:near(scene.world.ferry),spot:!!scene.world.fishingSpot(scene.player.position),mode,panel});
+    view.renderContext?.({...scene.getNavigation?.(destination),islandId:scene.world.islandId,position:scene.player.position,merchant:near(scene.world.seller),ferry:near(scene.world.ferry),secret:nearSecret(),spot:!!scene.world.fishingSpot(scene.player.position),mode,panel});
   }
   function setVisible(value){visible=!!value;held=false;previousAction=false;fishing.setPaused(!visible);syncInput();}
   async function setService(next){

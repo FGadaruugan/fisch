@@ -2,6 +2,7 @@ import {FISH,RODS,RARITIES,GAME} from './data.js';
 import {canVisit,fishPrice} from './progression.js';
 import {validCatch,boundedInt} from './save.js';
 import {GameError} from './errors.js';
+import {getSecretTradeInfo,isAtSecretTrade} from './trade.js';
 
 /** Pure transactional rules: input state is never mutated. Ticket validity is the service's responsibility. */
 export function applyGameMutation(state,{action,payload={}},{now=Date.now}={}) {
@@ -31,9 +32,19 @@ export function applyGameMutation(state,{action,payload={}},{now=Date.now}={}) {
     }
     case 'buy_rod': {
       const rod=RODS[payload.rodId];if(!rod)throw new GameError('INVALID_ROD');
+      if(rod.acquisition==='trade')throw new GameError('ROD_TRADE_ONLY');
       if(next.rods.includes(rod.id))throw new GameError('ROD_ALREADY_OWNED');
       if(next.coins<rod.price)throw new GameError('NOT_ENOUGH_COINS');
       next.coins-=rod.price;next.rods.push(rod.id);break;
+    }
+    case 'trade_rod': {
+      const info=getSecretTradeInfo(next);
+      if(payload.rodId!==info.rodId)throw new GameError('INVALID_ROD');
+      if(info.code)throw new GameError(info.code);
+      if(!isAtSecretTrade(next,payload.position))throw new GameError('TRADE_LOCATION_REQUIRED');
+      const consumedIds=info.requirements.map(row=>row.fish.id),ids=new Set(consumedIds);
+      next.coins-=info.price;next.fish=next.fish.filter(item=>!ids.has(item.id));next.rods.push(info.rodId);
+      result={rodId:info.rodId,consumedIds};break;
     }
     case 'equip_rod':
       if(!next.rods.includes(payload.rodId))throw new GameError('ROD_NOT_OWNED');

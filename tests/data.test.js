@@ -8,9 +8,9 @@ async function feature(path) {
 const data = await feature('../js/data.js');
 const rules = await feature('../js/progression.js');
 
-test('the playable catalogue contains the requested 25 species across three islands', () => {
+test('the original catalogue retains all 25 species across the first three islands', () => {
   assert.ok(data.FISH, 'Fish catalogue is implemented');
-  const fish = Object.values(data.FISH);
+  const fish = Object.values(data.FISH).filter(f=>['palm','coral','frost'].includes(f.islandId));
   const counts = Object.fromEntries(['Normal','Rare','Legendary','Mythic','???'].map(r => [r, fish.filter(f => f.rarity === r).length]));
   assert.deepEqual(counts, {Normal:10,Rare:8,Legendary:4,Mythic:2,'???':1});
   assert.equal(new Set(fish.map(f => f.id)).size, 25);

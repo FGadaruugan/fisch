@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createInitialState} from '../js/save.js';
 import {fishPrice} from '../js/progression.js';
+import {FISH} from '../js/data.js';
 let runGameCommand;try{({runGameCommand}=await import('../supabase/functions/fisch-api/commands.js'));}catch(e){if(e.code!=='ERR_MODULE_NOT_FOUND')throw e;}
 const A='00000000-0000-4000-8000-000000000001',B='00000000-0000-4000-8000-000000000002';
 function fixture(initial=createInitialState()){
@@ -76,4 +77,16 @@ test('sale retry observes a receipt after the original removes its fish',async()
   const caught=(await f.call('finish_cast',{ticketId:ticket.id,outcome:'caught'})).result;
   const retry=await commitBetweenReceiptAndState(f,'sell_fish',{ids:[caught.id]},'sale-race');
   assert.equal(retry.ok,true);assert.equal(retry.snapshot.coins,fishPrice(caught));assert.equal(retry.snapshot.fish.length,0);
+});
+test('server secret trade validates inventory and commits concurrent offerings once',async()=>{
+  const initial=createInitialState();Object.assign(initial,{coins:200000,totalXp:3600,lastIsland:'sanctuary'});
+  initial.fish=['n11','r09','l05','m03','u02'].map((speciesId,i)=>({id:'trade-'+i,speciesId,islandId:'sanctuary',weightGrams:FISH[speciesId]?.minGrams||1000,caughtAt:new Date(0).toISOString()}));
+  const f=fixture(initial);await f.call('bootstrap');const payload={rodId:'eclipse',position:{x:958,z:504}};
+  assert.equal((await f.call('buy_rod',{rodId:'eclipse'})).error?.code,'ROD_TRADE_ONLY');
+  assert.equal((await f.call('trade_rod',{...payload,coins:0})).error?.code,'INVALID_REQUEST');
+  const results=await Promise.all([f.call('trade_rod',payload,'trade-a'),f.call('trade_rod',payload,'trade-b')]);
+  assert.equal(results.filter(r=>r.ok).length,1);assert.equal(results.find(r=>!r.ok).error.code,'ROD_ALREADY_OWNED');
+  const winner=results[0].ok?'trade-a':'trade-b',again=await f.call('trade_rod',payload,winner);
+  assert.equal(again.ok,true);assert.equal(again.snapshot.coins,100000);assert.equal(again.snapshot.fish.length,0);
+  assert.deepEqual(again.snapshot.rods,['starter','eclipse']);
 });

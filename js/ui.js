@@ -6,6 +6,7 @@ import {renderBackpack,renderRodShop} from './ui/backpack.js';
 import {renderProfile} from './ui/profile.js';
 import {renderSettings} from './ui/settings.js';
 import {renderMap,updateMapNavigation} from './ui/map.js';
+import {renderSecretTrade} from './ui/secret.js';
 import {ensureVoyageHud,renderVoyageHud,locationName} from './ui/navigation.js';
 import {renderSocial} from './ui/social.js';
 import {h,empty,badge,money} from './ui/dom.js';
@@ -16,6 +17,7 @@ import {ensureSupportTarget,renderDeviceSupport} from './ui/device-support.js';
 import {updateInstallCard} from './ui/install.js';
 
 const PANEL_TITLES={backpack:['YOUR COLLECTION','Backpack'],profile:['YOUR STORY','Profile'],shop:['THE NEXT UPGRADE','Rod shop'],map:['BEYOND THE HORIZON','Islands'],settings:['MAKE IT YOURS','Graphics & settings'],top:['THE BEST OF THE SEA','Top 30'],friends:['A SHARED JOURNEY','Friends'],guide:['YOUR FIRST CAST','Удирдлага']};
+PANEL_TITLES.secret=['THE FIVE OFFERINGS','Туурийн сахиул'];PANEL_TITLES.map=['CHART YOUR OWN VOYAGE','🗺 Газрын зураг'];
 export function createUI({document:doc,onCommand,onPhase=()=>{},onCatch=()=>{}}) {
   const el=id=>doc.getElementById(id),root=el('shell'),lobby=createLobby({root}),loadingSupport=ensureSupportTarget(doc),voyageHud=ensureVoyageHud(doc);
   let snapshot=null,panel=null,mode='lobby',gameMode='local',context={},settings={},stats={},social={connected:false,metric:'xp'},filter={tab:'fish',rarity:'all',sort:'weight'},previousFocus=null,lastPhase='idle',lastNotice='',lastNoticeTime=0,catchTimer=null;
@@ -28,6 +30,7 @@ export function createUI({document:doc,onCommand,onPhase=()=>{},onCatch=()=>{}})
     const focusedCatch=doc.activeElement?.tagName==='SUMMARY'?doc.activeElement.parentElement?.dataset.catchId:null;let content;
     if(panel==='backpack')content=renderBackpack(snapshot,{...filter,merchant:context.merchant&&mode==='play',onFilter:patch=>{filter={...filter,...patch};renderPanel();}});
     else if(panel==='profile')content=renderProfile(snapshot,gameMode,account);
+    else if(panel==='secret')content=renderSecretTrade(snapshot,context);
     else if(panel==='shop')content=h('div',{},h('div',{class:'shop-balance'},h('span',{},'ТАНЫ COIN'),h('b',{},'✦ '+money(snapshot.coins))),renderRodShop(snapshot),renderBackpack(snapshot,{tab:'fish',rarity:'all',sort:'value',merchant:context.merchant&&mode==='play',onFilter:patch=>{filter={...filter,...patch};}}));
     else if(panel==='settings')content=renderSettings(settings,stats,deviceSupport,installState);
     else if(panel==='map')content=renderMap(snapshot,context);
@@ -100,11 +103,13 @@ export function createUI({document:doc,onCommand,onPhase=()=>{},onCatch=()=>{}})
       el('fishingTip').textContent=view.phase==='reeling'?'Дарвал дээш, суллавал доош. Давхцуулж ахицаа дүүргэ.':view.phase==='waiting'?'Хөвөгч дохио өгөхөд Татах товчийг дар.':'Хүчээ сонгоод товчоо суллаарай.';
     },
     renderContext(next){
+      const changedSecret=context.secret!==next.secret;
       context=next;
-      el('contextHint').textContent=next.sailing?'W/S — хурд · A/D — жолоо · E / Харилцах — буух':next.canBoard?'Завинд суух · E / Харилцах':next.canRecall?'Завийг тавцанд дуудах · E / Харилцах':next.motion==='swimming'?'Сэлэлт · WASD / joystick · Эрэгт хүрвэл алхана':next.merchant?'Худалдаачин · E / Харилцах':next.spot?'Загасчлах бүс · F товчоо дарж бариад сулла':'Тавцангийн үзүүрт завь бий. Map дээр чиглэлээ сонгоорой.';
-      const label=next.sailing?'Буух':next.canBoard?'Завинд суух':next.canRecall?'Завь дуудах':next.merchant?'Зарах':'Харилцах';
+      if(panel==='secret'&&changedSecret)renderPanel();
+      el('contextHint').textContent=next.sailing?'W/S — хурд · A/D — жолоо · E / Харилцах — буух':next.canBoard?'Завинд суух · E / Харилцах':next.canRecall?'Завийг тавцанд дуудах · E / Харилцах':next.motion==='swimming'?'Сэлэлт · WASD / joystick · Эрэгт хүрвэл алхана':next.secret?'Туурийн сахиул · E / Харилцах — Нууц солилцоо':next.merchant?'Худалдаачин · E / Харилцах':next.spot?'Загасчлах бүс · F товчоо дарж бариад сулла':'Тавцангийн үзүүрт завь бий. Map дээр чиглэлээ сонгоорой.';
+      const label=next.sailing?'Буух':next.canBoard?'Завинд суух':next.canRecall?'Завь дуудах':next.secret?'Нууц солилцоо':next.merchant?'Зарах':'Харилцах';
       const control=el('interactAction');control.querySelector('small').textContent=label;control.setAttribute('aria-label',label);
-      renderVoyageHud(voyageHud,next);if(next.mode==='play')el('islandName').textContent=locationName(next);
+      renderVoyageHud(voyageHud,{...next,totalXp:snapshot?.totalXp});if(next.mode==='play')el('islandName').textContent=locationName(next);
       el('playDestination').textContent=next.location?locationName(next)+'-д үргэлжлүүлэх':'Далай дахь аяллаа үргэлжлүүлэх';
       if(panel==='map')updateMapNavigation(el('panelContent'),next);
     },
