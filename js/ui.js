@@ -10,12 +10,14 @@ import {renderSocial} from './ui/social.js';
 import {h,empty,badge,money} from './ui/dom.js';
 import {fishIcon} from './models/fish.js';
 import {applyGuiVisibility} from './gui.js';
+import {updatePerformanceReadout} from './device-support.js';
+import {ensureSupportTarget,renderDeviceSupport} from './ui/device-support.js';
 
 const PANEL_TITLES={backpack:['YOUR COLLECTION','Backpack'],profile:['YOUR STORY','Profile'],shop:['THE NEXT UPGRADE','Rod shop'],map:['BEYOND THE HORIZON','Islands'],settings:['MAKE IT YOURS','Graphics & settings'],top:['THE BEST OF THE SEA','Top 30'],friends:['A SHARED JOURNEY','Friends'],guide:['YOUR FIRST CAST','Удирдлага']};
 export function createUI({document:doc,onCommand,onPhase=()=>{},onCatch=()=>{}}) {
-  const el=id=>doc.getElementById(id),root=el('shell'),lobby=createLobby({root});
+  const el=id=>doc.getElementById(id),root=el('shell'),lobby=createLobby({root}),loadingSupport=ensureSupportTarget(doc);
   let snapshot=null,panel=null,mode='lobby',gameMode='local',context={},settings={},stats={},social={connected:false,metric:'xp'},filter={tab:'fish',rarity:'all',sort:'weight'},previousFocus=null,lastPhase='idle',lastNotice='',lastNoticeTime=0,catchTimer=null;
-  const busySources=new Set(),originalDisabled=new WeakMap(),history=[];let account={user:null,connected:false};
+  const busySources=new Set(),originalDisabled=new WeakMap(),history=[];let account={user:null,connected:false},deviceSupport={features:[]};
   const send=(command,payload={})=>Promise.resolve(onCommand(command,payload)).catch(error=>showNotice(error?.code||'UNKNOWN'));
   const isEditing=()=>el('panelContent').contains(doc.activeElement)&&['INPUT','TEXTAREA'].includes(doc.activeElement?.tagName);
   function renderPanel(){
@@ -25,7 +27,7 @@ export function createUI({document:doc,onCommand,onPhase=()=>{},onCatch=()=>{}})
     if(panel==='backpack')content=renderBackpack(snapshot,{...filter,merchant:context.merchant&&mode==='play',onFilter:patch=>{filter={...filter,...patch};renderPanel();}});
     else if(panel==='profile')content=renderProfile(snapshot,gameMode,account);
     else if(panel==='shop')content=h('div',{},h('div',{class:'shop-balance'},h('span',{},'ТАНЫ COIN'),h('b',{},'✦ '+money(snapshot.coins))),renderRodShop(snapshot),renderBackpack(snapshot,{tab:'fish',rarity:'all',sort:'value',merchant:context.merchant&&mode==='play',onFilter:patch=>{filter={...filter,...patch};}}));
-    else if(panel==='settings')content=renderSettings(settings,stats);
+    else if(panel==='settings')content=renderSettings(settings,stats,deviceSupport);
     else if(panel==='map')content=renderMap(snapshot);
     else if(panel==='top'||panel==='friends')content=renderSocial(panel,social);
     else content=h('div',{class:'guide-panel'},h('h3',{},'Эхний загасаа барих'),h('ol',{},h('li',{},'WASD эсвэл joystick ашиглан тавцангийн үзүүрт оч.'),h('li',{},'F эсвэл Шидэх товчоо дарж бариад сулла.'),h('li',{},'Хөвөгч дохио өгөхөд F / Татах товчоо дахин дар.'),h('li',{},'Товчийг дарж/суллан барыг загасны тэмдэгтэй давхцуул.'),h('li',{},'Backpack-доо загасныхаа нэр, кг-г хар. Худалдаачинд зарж coin аваарай.')),h('h3',{},'Удирдлага'),h('p',{},'WASD / сум — алхах · Space — үсрэх · Mouse drag — камер · F — загасчлах · E — харилцах · B — Backpack · Esc — цэс'),h('p',{},'Утас: зүүн joystick-оор алхаж, дэлгэцийн баруун хоосон хэсгийг чирж камераа эргүүлнэ. Хоёр хуруугаар камерын зайг өөрчилнө.'));
@@ -36,7 +38,7 @@ export function createUI({document:doc,onCommand,onPhase=()=>{},onCatch=()=>{}})
   function applyBusy(){
     const busy=busySources.size>0;doc.body.dataset.busy=String(busy);
     for(const button of root.querySelectorAll('button[data-command], button[type="submit"]')){
-      if(['close','open','lobby'].includes(button.dataset.command))continue;
+      if(['close','open','lobby','support_refresh'].includes(button.dataset.command))continue;
       if(busy){if(!originalDisabled.has(button))originalDisabled.set(button,button.disabled);button.disabled=true;}
       else if(originalDisabled.has(button)){button.disabled=originalDisabled.get(button);originalDisabled.delete(button);}
     }
@@ -67,10 +69,11 @@ export function createUI({document:doc,onCommand,onPhase=()=>{},onCatch=()=>{}})
     void send('settings',{[name]:value});
   }
   function keyboard(event){
-    if(!panel)return;
-    if(event.key==='Escape'&&!event.isComposing){event.preventDefault();void send('close');}
+    const errorVisible=!el('loading').hidden&&el('loading').dataset.error==='true';
+    if(!panel&&!errorVisible)return;
+    if(event.key==='Escape'&&!event.isComposing&&!errorVisible){event.preventDefault();void send('close');}
     if(event.key==='Tab'){
-      const elements=[...el('modal').querySelectorAll('button:not([disabled]),input:not([disabled]),select:not([disabled]),a[href],summary')].filter(n=>n.getClientRects().length);
+      const elements=[...(errorVisible?el('loading'):el('modal')).querySelectorAll('button:not([disabled]),input:not([disabled]),select:not([disabled]),a[href],summary')].filter(n=>n.getClientRects().length);
       const first=elements[0],last=elements.at(-1);if(!first)return;
       if(event.shiftKey&&doc.activeElement===first){event.preventDefault();last.focus();}
       else if(!event.shiftKey&&doc.activeElement===last){event.preventDefault();first.focus();}
@@ -105,6 +108,12 @@ export function createUI({document:doc,onCommand,onPhase=()=>{},onCatch=()=>{}})
     },
     setBusy(value,source='game'){if(value)busySources.add(source);else busySources.delete(source);applyBusy();},
     setSettings(next){settings=next;applyGuiVisibility(root,settings);},
+    setDeviceSupport(next){
+      deviceSupport=next;
+      const target=el('panelContent').querySelector('[data-device-support]'),restoreFocus=target?.contains(doc.activeElement);
+      if(target){target.replaceChildren(renderDeviceSupport(deviceSupport));if(restoreFocus)target.querySelector('button')?.focus({preventScroll:true});}
+      if(!loadingSupport.hidden){const restore=loadingSupport.contains(doc.activeElement);loadingSupport.replaceChildren(renderDeviceSupport(deviceSupport));if(restore)loadingSupport.querySelector('button')?.focus({preventScroll:true});}
+    },
     setConnection(nextMode){gameMode=nextMode;el('connectionBadge').className='connection-badge '+(nextMode==='online'?'online':'');el('connectionBadge').replaceChildren(h('i',{}),nextMode==='online'?'ONLINE':'LOCAL');if(panel==='profile'&&!isEditing())renderPanel();},
     setSocial(next){social={...social,...next};if(['top','friends'].includes(panel)&&!isEditing())renderPanel();},
     setAccount(next){account={...account,...next};if(panel==='profile'&&!isEditing())renderPanel();},
@@ -114,10 +123,10 @@ export function createUI({document:doc,onCommand,onPhase=()=>{},onCatch=()=>{}})
       el('statsDetail').textContent=(stats.frameMs?stats.frameMs.toFixed(1)+'ms':'—')+' · '+stats.calls+' calls · '+Math.round(stats.triangles/1000)+'k tris';
       history.push(stats.fps);if(history.length>18)history.shift();[...el('statsBars').children].forEach((bar,index)=>bar.style.height=(3+(history[index]||0)/144*24)+'px');
       const hour=Math.floor(stats.hour),minute=Math.floor((stats.hour-hour)*60);el('islandTime').textContent=String(hour).padStart(2,'0')+':'+String(minute).padStart(2,'0');
-      if(panel==='settings'){const b=el('panelContent').querySelector('.graphics-summary b');if(b)b.textContent=(stats.fps||'—')+' FPS';}
+      if(panel==='settings')updatePerformanceReadout(el('panelContent'),stats);
     },
     finishLoading(){el('loading').hidden=true;},
-    showError(message){el('loading').hidden=false;el('loadingText').textContent=message;el('retryButton').hidden=false;el('loading').querySelector('.loading-wave').hidden=true;},
+    showError(message){el('loading').hidden=false;el('loading').dataset.error='true';el('loadingText').textContent=message;el('retryButton').hidden=false;el('loading').querySelector('.loading-wave').hidden=true;loadingSupport.hidden=false;loadingSupport.replaceChildren(renderDeviceSupport(deviceSupport));el('retryButton').focus({preventScroll:true});},
     dispose(){clearTimeout(catchTimer);root.removeEventListener('click',click);root.removeEventListener('submit',submit);root.removeEventListener('change',setting);doc.removeEventListener('keydown',keyboard);el('modalBackdrop').removeEventListener('click',backdropClick);}
   };
 }

@@ -46,6 +46,7 @@ export function createGraphics(T,canvas,rawSettings={},onQuality=()=>{}) {
     observeRaf:now=>monitor.observeRaf(now),
     render(now){const before=performance.now();renderer.render(scene,camera);monitor.rendered(now,performance.now()-before,renderer.info.render);},
     getStats(){return{...monitor.getSnapshot(),quality:quality.label,targetFps:settings.targetFps,pixelRatio:renderer.getPixelRatio(),hour};},
+    getSupport(){return{webgl2:renderer.capabilities.isWebGL2===true,contextLost:renderer.getContext().isContextLost(),maxTextureSize:renderer.capabilities.maxTextureSize};},
     resetMonitor(){monitor.reset();},
     dispose(){ocean.dispose();lighting.dispose();renderer.dispose();}
   };

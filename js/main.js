@@ -15,6 +15,7 @@ import {prepareSocialRefresh} from './ui/social-state.js';
 import {createFullscreenControl} from './fullscreen.js';
 import {createPopupLogin} from './account-popup.js';
 import {createIdentityGuard} from './account-identity.js';
+import {collectDeviceSupport} from './device-support.js';
 
 const byId=id=>document.getElementById(id),SETTINGS_KEY='fisch3d.settings.v1';
 let settings;try{settings=normalizeSettings(JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}'));}catch{settings=normalizeSettings();}
@@ -28,6 +29,11 @@ audio=createAudio(()=>settings.volume);
 const localService=createLocalService({onStorageError:code=>view.showNotice(code)});
 const pacer=createFramePacer(settings.targetFps);view.setSettings(settings);
 window.addEventListener('pointerdown',audio.unlock,{once:true});window.addEventListener('keydown',audio.unlock,{once:true});
+
+function refreshDeviceSupport(){
+  let gpu;try{gpu=graphics?.getSupport();}catch{}
+  view.setDeviceSupport(collectDeviceSupport({window,document,navigator,graphics:gpu}));
+}
 
 function cameraCollision(world,target,desired){
   let fraction=1;
@@ -142,6 +148,7 @@ async function refreshSocial(payload={}){
   }catch(error){if(token===refreshGeneration){socialState={...socialState,loading:false,error:'Холболт тасарлаа. Дахин шалгаарай.'};view.setSocial(socialState);}}
 }
 async function command(name,payload={}){
+  if(name==='support_refresh'){refreshDeviceSupport();return;}
   if(name==='fullscreen'){await fullscreen.toggle();return;}
   if(name==='settings'){
     const previousFps=settings.targetFps;
@@ -191,6 +198,7 @@ async function command(name,payload={}){
 }
 try{
   graphics=createGraphics(THREE,byId('viewport'),settings);
+  refreshDeviceSupport();
   const input=createInput({window,canvas:byId('viewport'),joystick:byId('joystick'),action:byId('fishingAction'),jump:byId('jumpAction'),interact:byId('interactAction')});
   const fishing=createFishingController({onFinish:event=>app?.handleFinish(event)});
   app=createApp({service:localService,fishing,input,worldFactory,view});view.finishLoading();
@@ -207,6 +215,6 @@ try{
   const resize=()=>graphics.resize();window.addEventListener('resize',resize);window.addEventListener('orientationchange',resize);
   function visibility(value){app.setVisible(value);pacer.reset();graphics.resetMonitor();if(value)audio.resume();else audio.suspend();}
   document.addEventListener('visibilitychange',()=>visibility(!document.hidden));window.addEventListener('blur',()=>visibility(false));window.addEventListener('focus',()=>visibility(!document.hidden));
-  byId('viewport').addEventListener('webglcontextlost',event=>{event.preventDefault();visibility(false);view.showError('Графикийн холболт түр тасарлаа. Ахиц хадгалагдсан. Дахин оролдоорой.');});
+  byId('viewport').addEventListener('webglcontextlost',event=>{event.preventDefault();visibility(false);refreshDeviceSupport();view.showError('Графикийн холболт түр тасарлаа. Ахиц хадгалагдсан. Дахин оролдоорой.');});
   window.addEventListener('beforeunload',()=>{cancelAnimationFrame(animationId);if(heartbeatTimer)clearInterval(heartbeatTimer);authSubscription?.unsubscribe();onlineService?.dispose();fullscreen.dispose();app.dispose();graphics.dispose();audio.dispose();view.dispose();},{once:true});
-}catch(error){console.error('Fisch startup failed',error);view.showError('3D график нээгдсэнгүй. WebGL 2 дэмждэг browser дээр дахин оролдоорой.');}
+}catch(error){console.error('Fisch startup failed',error);refreshDeviceSupport();view.showError('3D график нээгдсэнгүй. Доорх дэмжлэгийн мэдээллийг шалгаад дахин оролдоорой.');}
