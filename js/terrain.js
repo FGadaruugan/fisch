@@ -25,10 +25,11 @@ export function createTerrainModel(islandId) {
     h=lerp(h,1.5+Math.max(0,radius*0.79-lz)*0.05,port);
     return h;
   }
+  const isBlocked=(x,z)=>buildings.some(([bx,bz,w,d])=>Math.abs(x-center.x-bx)<w/2+0.5&&Math.abs(z-center.z-bz)<d/2+0.5);
   function isWalkable(x,z){
     if(!Number.isFinite(x)||!Number.isFinite(z))return false;
     const lx=x-center.x,lz=z-center.z;
-    if(buildings.some(([bx,bz,w,d])=>Math.abs(lx-bx)<w/2+0.5&&Math.abs(lz-bz)<d/2+0.5))return false;
+    if(isBlocked(x,z))return false;
     return onPier(x,z)||Math.hypot(lx,lz)<coastRadius(Math.atan2(lz,lx))-1.3;
   }
   function fishingSpot(position){
@@ -39,5 +40,5 @@ export function createTerrainModel(islandId) {
   }
   const spawn=point(0,radius*0.83),seller=point(-9,radius*0.82),ferry=point(10,radius*0.89);
   for(const p of [spawn,seller,ferry])p.y=heightAt(p.x,p.z);
-  return{meta,islandId,center,radius,spawn,seller,ferry,buildings,coastRadius,heightAt,isWalkable,fishingSpot,onPier};
+  return{meta,islandId,center,radius,spawn,seller,ferry,buildings,coastRadius,heightAt,isWalkable,isBlocked,fishingSpot,onPier};
 }

@@ -290,6 +290,8 @@ input:not([type="range"]):not([type="radio"]):not([type="checkbox"]),select{bord
 .loading-support .device-support{margin-bottom:25px}
 .loading-screen .device-support p{max-width:none;text-align:left;padding:0;margin-top:12px;font-size:10px;letter-spacing:0}
 .archipelago-map{height:250px;position:relative;border-radius:10px;overflow:hidden;background:radial-gradient(ellipse at center,#7eafa8,#386f7e);border:1px solid #bfd2c1;margin-bottom:20px}
+.voyage-hud{position:absolute;top:110px;left:50%;transform:translateX(-50%);display:grid;grid-template-columns:1fr auto;gap:5px 13px;max-width:400px;width:calc(100% - 460px);min-width:170px;padding:11px 15px;border:1px solid #d2e3cc38;border-radius:13px;background:#143c46c9;color:#f2e5bf;pointer-events:none}
+.voyage-hud>span{font-size:10px;color:#e6ede0}.voyage-hud>b{font-size:11px;white-space:nowrap}.voyage-hud>small{grid-column:1 / -1;font-size:10px;line-height:1.6;padding-left:19px}.voyage-hud>i{position:absolute;left:14px;bottom:12px;font-style:normal;font-size:15px;color:#f4d983;line-height:1}
 .map-grid-lines{position:absolute;inset:0;background-image:linear-gradient(#e7ede319 1px,transparent 1px),linear-gradient(90deg,#e7ede319 1px,transparent 1px);background-size:35px 35px}
 .map-ocean-label{position:absolute;left:7%;bottom:15%;font-size:8px;letter-spacing:3px;color:#d1e0ce;opacity:.6}
 .map-island{position:absolute;transform:translate(-50%,-50%);text-align:center;color:#edf4df}
@@ -298,6 +300,18 @@ input:not([type="range"]):not([type="radio"]):not([type="checkbox"]),select{bord
 .map-island.frost i{width:80px;height:62px;border-radius:36% 55% 60% 48%}
 .map-island b{display:block;position:relative;margin-top:12px;font-size:10px;text-shadow:0 1px 4px #235557}
 .map-island small{font-size:8px;opacity:.7}
+.archipelago-map .map-island{width:var(--diameter);z-index:2}
+.archipelago-map .map-island i{width:100%;height:auto;aspect-ratio:1.3;border-width:4px}
+.archipelago-map .map-island b{font-size:9px;white-space:nowrap;position:relative;left:50%;width:max-content;transform:translateX(-50%);margin-top:8px}
+.archipelago-map .map-island small{white-space:nowrap;display:block;position:relative;left:50%;width:max-content;transform:translateX(-50%)}
+.map-island[data-target="true"] i{box-shadow:0 0 0 4px #f3d68e,0 0 18px #f3d68e66}
+.map-player{position:absolute;z-index:5;transform:translate(-50%,-50%);text-align:center;pointer-events:none}
+.map-player i{display:block;width:0;height:0;border:5px solid transparent;border-bottom:13px solid #fff4b9;filter:drop-shadow(0 1px 3px #183e42);transform:rotate(var(--heading));transform-origin:50% 70%}
+.map-player b{display:block;font-size:7px;background:#153d49d9;padding:2px 4px;border-radius:3px;color:#fff4c9;margin-top:3px}
+.map-north{position:absolute;right:18px;top:14px;font-size:14px;letter-spacing:2px;color:#edf1d4}.map-scale{position:absolute;right:16px;bottom:13px;font-size:9px;color:#d0e2cf}
+.map-route{padding:12px 15px;margin:12px 0;border:1px solid #d7dfcc;border-radius:8px;background:#f6f4e9;font-size:12px;color:#42685a}
+@media(max-width:700px){.voyage-hud{top:86px;max-width:320px;width:calc(100% - 130px);min-width:150px;padding:9px 11px;gap:4px 8px}.voyage-hud>span,.voyage-hud>small{font-size:8px}.voyage-hud>b{font-size:9px}.voyage-hud>i{left:10px;bottom:11px}.map-route{font-size:10px}}
+@media(max-height:520px) and (orientation:landscape){.voyage-hud{top:65px;max-width:300px;padding:7px 11px}.voyage-hud>small{font-size:9px}}
 .island-card{display:flex;align-items:center;gap:17px;padding:17px 0;border-bottom:1px solid var(--line)}
 .island-symbol{width:58px;height:58px;border-radius:10px;display:grid;place-items:center;border:1px solid var(--accent);color:var(--accent);font-size:33px;background:#fcf8e9}
 .island-card>div:nth-child(2){flex:1}

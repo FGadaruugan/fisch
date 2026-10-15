@@ -5,15 +5,17 @@ import {createLocalService} from '../js/services/local.js';
 import {createFishingController} from '../js/fishing.js';
 import {createInput} from '../js/input.js';
 import {createTerrainModel} from '../js/terrain.js';
+import {createNavigationModel} from '../js/navigation.js';
+import {SAVE_KEY,createInitialState} from '../js/save.js';
 const feature=await loadFeature('../js/app.js');
 const flush=()=>new Promise(resolve=>setImmediate(resolve));
-function setup(){
+function setup({xp=0}={}){
   assert.equal(typeof feature.createApp,'function');
-  const win=new EventTarget(),input=createInput({window:win}),service=createLocalService({storage:memoryStorage(),rng:()=>0});
+  const win=new EventTarget(),input=createInput({window:win}),service=createLocalService({storage:memoryStorage({[SAVE_KEY]:JSON.stringify({...createInitialState(),totalXp:xp})}),rng:()=>0});
   const notices=[],caught=[],rendered=[];let busy=false,app;
   const view={renderSnapshot:s=>rendered.push(s),renderFishing(){},showPanel(){},showNotice:c=>notices.push(c),showCatch:f=>caught.push(f),setBusy:v=>{busy=v;}};
   const fishing=createFishingController({onFinish:event=>app.handleFinish(event)});
-  const factory=id=>{const world=createTerrainModel(id),p={x:world.center.x,y:2.2,z:world.center.z+world.radius*1.04};return{world,player:{position:p},update(){},dispose(){}};};
+  const factory=id=>{const world=createNavigationModel({islandId:id,totalXp:service.getSnapshot().totalXp}),p={x:world.center.x,y:2.2,z:world.center.z+world.radius*1.04};return{world,player:{position:p,motion:'walking'},setIsland:world.setIsland,setAccess:world.setAccess,update(){},dispose(){}};};
   app=feature.createApp({service,fishing,input,worldFactory:factory,view});
   const key=(code,down)=>{const e=new Event(down?'keydown':'keyup',{cancelable:true});Object.assign(e,{code,repeat:false});win.dispatchEvent(e);};
   return{app,service,fishing,input,notices,caught,rendered,key,get busy(){return busy;}};
@@ -55,4 +57,33 @@ test('disposing the app detaches snapshots from the view',async()=>{
 test('an invalid service switch cannot replace the current playable service',async()=>{
   const s=setup();await assert.rejects(s.app.setService(null));assert.equal(s.app.getService(),s.service);
   const next=createLocalService({storage:memoryStorage()});next.isActive=()=>false;await assert.rejects(s.app.setService(next));assert.equal(s.app.getService(),s.service);s.app.dispose();
+});
+
+test('map selection only guides and physical arrival commits without recreating or moving the scene',async()=>{
+  const s=setup({xp:1600});s.app.play();const scene=s.app.getScene(),start={...scene.player.position};
+  await s.app.travel('coral');assert.equal(s.service.getSnapshot().lastIsland,'palm');assert.deepEqual(scene.player.position,start);assert.equal(s.app.getState().destination,'coral');
+  Object.assign(scene.player.position,scene.world.models.coral.spawn);const reached={...scene.player.position};s.app.tick(.05);await flush();
+  assert.equal(s.service.getSnapshot().lastIsland,'coral');assert.equal(s.app.getScene(),scene);assert.deepEqual(scene.player.position,reached);assert.equal(scene.world.islandId,'coral');s.app.dispose();
+});
+test('a failed arrival keeps physical position and can retry without losing control',async()=>{
+  const s=setup({xp:1600});s.app.play();const scene=s.app.getScene(),travel=s.service.travel;let attempts=0;
+  s.service.travel=async id=>{if(++attempts===1)throw {code:'NETWORK_ERROR'};return travel(id);};
+  Object.assign(scene.player.position,scene.world.models.coral.spawn);const point={...scene.player.position};s.app.tick(.05);await flush();
+  assert.equal(scene.world.islandId,'palm');assert.deepEqual(scene.player.position,point);assert.equal(s.busy,false);
+  for(let i=0;i<125;i++)s.app.tick(.05);await flush();assert.equal(s.service.getSnapshot().lastIsland,'coral');assert.equal(attempts,2);s.app.dispose();
+});
+test('a delayed arrival cannot change a replacement account scene',async()=>{
+  const s=setup({xp:1600});s.app.play();let finish,started=0;const gate=new Promise(resolve=>{finish=resolve;}),travel=s.service.travel;
+  s.service.travel=async id=>{started++;await gate;return travel(id);};Object.assign(s.app.getScene().player.position,s.app.getScene().world.models.coral.spawn);s.app.tick(.05);await flush();assert.equal(started,1);
+  const next=createLocalService({storage:memoryStorage()});await s.app.setService(next);assert.equal(s.busy,false,'old arrival must not freeze a new account');const scene=s.app.getScene();finish();await flush();
+  assert.equal(s.app.getScene(),scene);assert.equal(scene.world.islandId,'palm');assert.equal(s.app.getService(),next);s.app.dispose();
+});
+test('fishing requires leaving the boat even when it is alongside a fishing pier',async()=>{
+  const s=setup();s.app.play();s.app.getScene().player.motion='sailing';await s.app.dispatch('fish_press');
+  assert.equal(s.fishing.getView().phase,'idle');assert.ok(s.notices.includes('ON_FOOT_FISHING'));s.app.dispose();
+});
+test('opening Settings during arrival preserves the reached island and the open panel',async()=>{
+  const s=setup({xp:1600});s.app.play();let finish;const gate=new Promise(resolve=>{finish=resolve;}),travel=s.service.travel;
+  s.service.travel=async id=>{await gate;return travel(id);};const scene=s.app.getScene();Object.assign(scene.player.position,scene.world.models.coral.spawn);s.app.tick(.05);s.app.openPanel('settings');
+  finish();await flush();assert.equal(scene.world.islandId,'coral');assert.equal(s.app.getState().panel,'settings');s.app.dispose();
 });

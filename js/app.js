@@ -1,16 +1,17 @@
 import {operationId} from './services/local.js';
 import {GameError} from './errors.js';
+import {canVisit} from './progression.js';
 
 /** Owns game lifecycle; rendering, persistence and input are injected boundaries. */
 export function createApp({service,fishing,input,worldFactory,view}) {
-  let mode='lobby',panel=null,visible=true,disposed=false,busyCount=0,generation=0,activeTicket=null,held=false,previousAction=false,pendingFinish=null;
-  let scene=worldFactory(service.getSnapshot().lastIsland),unsubscribe=()=>{};
+  let mode='lobby',panel=null,visible=true,disposed=false,busyCount=0,generation=0,activeTicket=null,held=false,previousAction=false,pendingFinish=null,destination=null,elapsed=0,arrivalRetry=0,pendingArrival=null;
+  let scene=worldFactory(service.getSnapshot().lastIsland,{totalXp:service.getSnapshot().totalXp}),unsubscribe=()=>{};
   const isBusy=()=>busyCount>0;
   const syncInput=()=>input.setEnabled(visible&&mode==='play'&&!panel&&!disposed);
   const changeBusy=delta=>{busyCount=Math.max(0,busyCount+delta);view.setBusy(isBusy());};
   const fail=error=>view.showNotice(error?.code||'UNKNOWN');
   const near=point=>!!point&&Math.hypot(scene.player.position.x-point.x,scene.player.position.z-point.z)<7;
-  function bind(){unsubscribe=service.subscribe(snapshot=>{if(!disposed)view.renderSnapshot(snapshot);});}
+  function bind(){unsubscribe=service.subscribe(snapshot=>{if(!disposed){scene.setAccess?.(snapshot.totalXp);view.renderSnapshot(snapshot);}});}
   function cancelActive(){
     generation++;held=false;previousAction=false;fishing.cancel();input.releaseAll();
     const ticket=activeTicket;activeTicket=null;
@@ -18,7 +19,8 @@ export function createApp({service,fishing,input,worldFactory,view}) {
     view.renderFishing(fishing.getView());
   }
   function showCurrent(){view.showPanel(panel||mode);syncInput();}
-  function replaceScene(id){const old=scene;scene=worldFactory(id);old.dispose();}
+  function releaseArrival(ticket){if(ticket&&!ticket.released){ticket.released=true;changeBusy(-1);}}
+  function replaceScene(id){releaseArrival(pendingArrival);pendingArrival=null;const old=scene;scene=worldFactory(id,{totalXp:service.getSnapshot().totalXp});destination=null;arrivalRetry=0;old.dispose();}
   async function run(command){
     if(disposed||isBusy())return false;
     changeBusy(1);try{await command();return true;}catch(error){fail(error);return false;}finally{changeBusy(-1);}
@@ -26,6 +28,7 @@ export function createApp({service,fishing,input,worldFactory,view}) {
   async function fishPress(){
     held=true;
     if(disposed||!visible||mode!=='play'||panel||isBusy())return;
+    if(['swimming','sailing'].includes(scene.player.motion)){view.showNotice('ON_FOOT_FISHING');return;}
     if(fishing.active){fishing.press();return;}
     const spot=scene.world.fishingSpot(scene.player.position);
     if(!spot){view.showNotice('NEAR_WATER');return;}
@@ -56,9 +59,23 @@ export function createApp({service,fishing,input,worldFactory,view}) {
   function openPanel(name){if(disposed)return;cancelActive();panel=name;showCurrent();}
   function closePanel(){panel=null;showCurrent();}
   async function travel(islandId){
-    if(pendingFinish)await pendingFinish;
-    const ok=await run(()=>service.travel(islandId));
-    if(ok){cancelActive();replaceScene(service.getSnapshot().lastIsland);mode='play';panel=null;showCurrent();}
+    if(disposed)return;
+    if(!canVisit(islandId,service.getSnapshot().totalXp)){view.showNotice('ISLAND_LOCKED');return;}
+    cancelActive();destination=islandId;mode='play';panel=null;showCurrent();
+  }
+  function checkArrival(){
+    const reached=scene.world.islandAt?.(scene.player.position,24);if(!reached)return;
+    if(reached.id===scene.world.islandId){if(destination===reached.id)destination=null;return;}
+    if(!canVisit(reached.id,service.getSnapshot().totalXp)||pendingArrival||elapsed<arrivalRetry)return;
+    const actor=service,place=scene,ticket={released:false};pendingArrival=ticket;changeBusy(1);
+    ticket.work=(async()=>{
+      try{
+        await actor.travel(reached.id);
+        if(disposed||actor!==service||place!==scene)return;
+        place.setIsland?.(reached.id);if(destination===reached.id)destination=null;view.showNotice('ISLAND_ARRIVED');
+      }catch(error){if(!disposed&&actor===service&&place===scene){arrivalRetry=elapsed+5;fail(error);}}
+      finally{releaseArrival(ticket);if(pendingArrival===ticket)pendingArrival=null;}
+    })();
   }
   async function dispatch(command,payload={}){
     switch(command){
@@ -81,18 +98,19 @@ export function createApp({service,fishing,input,worldFactory,view}) {
   }
   function tick(dt){
     if(disposed||!visible)return;
-    const values=input.getSnapshot();
+    elapsed+=Math.min(.05,Math.max(0,dt));const values=input.getSnapshot();
     if(values.cancelPressed){if(panel)closePanel();else if(fishing.active)cancelActive();else openPanel('settings');}
     if(values.backpackPressed)openPanel('backpack');
     if(mode==='play'&&!panel){
-      if(values.interactPressed){if(near(scene.world.seller))openPanel('shop');else if(near(scene.world.ferry))openPanel('map');}
+      if(values.interactPressed&&!isBusy()&&!fishing.active){const interaction=scene.interact?.();if(interaction){if(interaction.code)view.showNotice(interaction.code);}else if(near(scene.world.seller))openPanel('shop');else if(near(scene.world.ferry))openPanel('map');}
       if(values.actionHeld!==previousAction){previousAction=values.actionHeld;if(values.actionHeld)void fishPress();else{held=false;fishing.release();}}
     }
     fishing.tick(dt);
     const locked=mode!=='play'||!!panel||fishing.active||isBusy();
-    scene.update({...values,moveX:locked?0:values.moveX,moveZ:locked?0:values.moveZ,jumpPressed:!locked&&values.jumpPressed},dt,fishing.getView(),mode);
+    scene.update({...values,freeze:locked,moveX:locked?0:values.moveX,moveZ:locked?0:values.moveZ,jumpPressed:!locked&&values.jumpPressed},dt,fishing.getView(),mode);
+    if(!locked)checkArrival();
     view.renderFishing(fishing.getView());
-    view.renderContext?.({islandId:scene.world.islandId,position:scene.player.position,merchant:near(scene.world.seller),ferry:near(scene.world.ferry),spot:!!scene.world.fishingSpot(scene.player.position),mode,panel});
+    view.renderContext?.({...scene.getNavigation?.(destination),islandId:scene.world.islandId,position:scene.player.position,merchant:near(scene.world.seller),ferry:near(scene.world.ferry),spot:!!scene.world.fishingSpot(scene.player.position),mode,panel});
   }
   function setVisible(value){visible=!!value;held=false;previousAction=false;fishing.setPaused(!visible);syncInput();}
   async function setService(next){
@@ -102,5 +120,5 @@ export function createApp({service,fishing,input,worldFactory,view}) {
     const snapshot=next.getSnapshot();cancelActive();unsubscribe();service=next;replaceScene(snapshot.lastIsland);bind();mode='lobby';panel=null;showCurrent();
   }
   bind();showCurrent();
-  return{play,openPanel,closePanel,travel,dispatch,tick,setVisible,setService,handleFinish,getScene:()=>scene,getService:()=>service,getState:()=>({mode,panel,visible,busy:isBusy()}),dispose(){if(disposed)return;cancelActive();disposed=true;unsubscribe();scene.dispose();input.dispose();}};
+  return{play,openPanel,closePanel,travel,dispatch,tick,setVisible,setService,handleFinish,getScene:()=>scene,getService:()=>service,getState:()=>({mode,panel,visible,destination,busy:isBusy()}),dispose(){if(disposed)return;cancelActive();releaseArrival(pendingArrival);disposed=true;unsubscribe();scene.dispose();input.dispose();}};
 }

@@ -2,6 +2,16 @@
 
 A playable local and account-based 3D fishing game, delivered on the requested GitHub repository.
 
+## Physical sailing and swimming — 2026-10-15
+
+All three canonical island coordinates now share a bounded global terrain/navigation model. The character can walk into water, swim and climb onto shore; locked land and building collisions remain enforced. A procedural motorboat supports acceleration/reverse, steering, hull clearance/substeps, boarding and safe shore/water exit. The existing port worker recalls the free session boat to the current port. Menus, tab visibility and outstanding game actions freeze vessel movement.
+
+Map buttons select a destination without mutating the saved island or recreating the scene. Actual approach triggers the existing service travel command as an arrival checkpoint. Scene/service identity guards discard stale completions; an owned busy lease releases when accounts change, and opening a menu cannot invalidate a legitimate reached-island update. Failed arrival preserves coordinates and retries after five active seconds. The server protocol and schema are unchanged; location remains client-reported, and exact ocean coordinates/vessel are session state. Reload/login starts at the last saved port.
+
+Detailed island visuals load near the player and release with distance hysteresis; far silhouettes remain visible. One shared ocean, camera and player persist throughout a trip. The map and navigation HUD derive live positions, bearings and coast distances from the same coordinate model. Cached older HTML receives a missing navigation HUD dynamically.
+
+Verification covers swim/shore transitions, speed/frame bounds, hull/boundary collisions, safe exits, level locks, route-only selection, preserved arrival coordinates, failed/delayed arrival and account/menu races, camera-relative movement and real Three.js geometry/disposal. An integrated CPU simulation boards the actual boat, pauses through the map and physically sails around Palm Bay to Coral before saving arrival in the same scene. Device/GPU rendering, touch sailing feel and actual sailing FPS remain device QA items.
+
 ## Installable app — 2026-10-15
 
 The approved app-like direction is implemented as standalone PWA metadata and an install control inside the existing Settings flow. The manifest keeps id, scope and start_url at the same /fisch/ base for both Pages publishers. Both HTML pages reference the shared manifest; the static packager copies it alongside opaque 192/512 PNG icons and a 180 PNG Apple touch icon. The fish mark comes from the existing project favicon, with its complete silhouette inside the maskable safe circle. The editable SVG source is committed.

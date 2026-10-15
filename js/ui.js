@@ -5,7 +5,8 @@ import {createLobby} from './lobby.js';
 import {renderBackpack,renderRodShop} from './ui/backpack.js';
 import {renderProfile} from './ui/profile.js';
 import {renderSettings} from './ui/settings.js';
-import {renderMap} from './ui/map.js';
+import {renderMap,updateMapNavigation} from './ui/map.js';
+import {ensureVoyageHud,renderVoyageHud,locationName} from './ui/navigation.js';
 import {renderSocial} from './ui/social.js';
 import {h,empty,badge,money} from './ui/dom.js';
 import {fishIcon} from './models/fish.js';
@@ -16,7 +17,7 @@ import {updateInstallCard} from './ui/install.js';
 
 const PANEL_TITLES={backpack:['YOUR COLLECTION','Backpack'],profile:['YOUR STORY','Profile'],shop:['THE NEXT UPGRADE','Rod shop'],map:['BEYOND THE HORIZON','Islands'],settings:['MAKE IT YOURS','Graphics & settings'],top:['THE BEST OF THE SEA','Top 30'],friends:['A SHARED JOURNEY','Friends'],guide:['YOUR FIRST CAST','Удирдлага']};
 export function createUI({document:doc,onCommand,onPhase=()=>{},onCatch=()=>{}}) {
-  const el=id=>doc.getElementById(id),root=el('shell'),lobby=createLobby({root}),loadingSupport=ensureSupportTarget(doc);
+  const el=id=>doc.getElementById(id),root=el('shell'),lobby=createLobby({root}),loadingSupport=ensureSupportTarget(doc),voyageHud=ensureVoyageHud(doc);
   let snapshot=null,panel=null,mode='lobby',gameMode='local',context={},settings={},stats={},social={connected:false,metric:'xp'},filter={tab:'fish',rarity:'all',sort:'weight'},previousFocus=null,lastPhase='idle',lastNotice='',lastNoticeTime=0,catchTimer=null;
   const busySources=new Set(),originalDisabled=new WeakMap(),history=[];let account={user:null,connected:false},deviceSupport={features:[]},installState={};
   const send=(command,payload={})=>Promise.resolve(onCommand(command,payload)).catch(error=>showNotice(error?.code||'UNKNOWN'));
@@ -29,7 +30,7 @@ export function createUI({document:doc,onCommand,onPhase=()=>{},onCatch=()=>{}})
     else if(panel==='profile')content=renderProfile(snapshot,gameMode,account);
     else if(panel==='shop')content=h('div',{},h('div',{class:'shop-balance'},h('span',{},'ТАНЫ COIN'),h('b',{},'✦ '+money(snapshot.coins))),renderRodShop(snapshot),renderBackpack(snapshot,{tab:'fish',rarity:'all',sort:'value',merchant:context.merchant&&mode==='play',onFilter:patch=>{filter={...filter,...patch};}}));
     else if(panel==='settings')content=renderSettings(settings,stats,deviceSupport,installState);
-    else if(panel==='map')content=renderMap(snapshot);
+    else if(panel==='map')content=renderMap(snapshot,context);
     else if(panel==='top'||panel==='friends')content=renderSocial(panel,social);
     else content=h('div',{class:'guide-panel'},h('h3',{},'Эхний загасаа барих'),h('ol',{},h('li',{},'WASD эсвэл joystick ашиглан тавцангийн үзүүрт оч.'),h('li',{},'F эсвэл Шидэх товчоо дарж бариад сулла.'),h('li',{},'Хөвөгч дохио өгөхөд F / Татах товчоо дахин дар.'),h('li',{},'Товчийг дарж/суллан барыг загасны тэмдэгтэй давхцуул.'),h('li',{},'Backpack-доо загасныхаа нэр, кг-г хар. Худалдаачинд зарж coin аваарай.')),h('h3',{},'Удирдлага'),h('p',{},'WASD / сум — алхах · Space — үсрэх · Mouse drag — камер · F — загасчлах · E — харилцах · B — Backpack · Esc — цэс'),h('p',{},'Утас: зүүн joystick-оор алхаж, дэлгэцийн баруун хоосон хэсгийг чирж камераа эргүүлнэ. Хоёр хуруугаар камерын зайг өөрчилнө.'));
     let nextFocus;
@@ -98,7 +99,15 @@ export function createUI({document:doc,onCommand,onPhase=()=>{},onCatch=()=>{}})
       el('fishingRemaining').textContent=view.phase==='charging'?Math.round(view.charge*100)+'%':view.phase==='reeling'?Math.ceil(view.remaining)+'s':view.phase==='bite'?'Одоо дар!':'';
       el('fishingTip').textContent=view.phase==='reeling'?'Дарвал дээш, суллавал доош. Давхцуулж ахицаа дүүргэ.':view.phase==='waiting'?'Хөвөгч дохио өгөхөд Татах товчийг дар.':'Хүчээ сонгоод товчоо суллаарай.';
     },
-    renderContext(next){context=next;el('contextHint').textContent=next.merchant?'Худалдаачин · E / Харилцах':next.ferry?'Арал руу аялах · E / Харилцах':next.spot?'Загасчлах бүс · F товчоо дарж бариад сулла':'Тавцангийн үзүүрт эсвэл эргийн усанд ойртоорой.';},
+    renderContext(next){
+      context=next;
+      el('contextHint').textContent=next.sailing?'W/S — хурд · A/D — жолоо · E / Харилцах — буух':next.canBoard?'Завинд суух · E / Харилцах':next.canRecall?'Завийг тавцанд дуудах · E / Харилцах':next.motion==='swimming'?'Сэлэлт · WASD / joystick · Эрэгт хүрвэл алхана':next.merchant?'Худалдаачин · E / Харилцах':next.spot?'Загасчлах бүс · F товчоо дарж бариад сулла':'Тавцангийн үзүүрт завь бий. Map дээр чиглэлээ сонгоорой.';
+      const label=next.sailing?'Буух':next.canBoard?'Завинд суух':next.canRecall?'Завь дуудах':next.merchant?'Зарах':'Харилцах';
+      const control=el('interactAction');control.querySelector('small').textContent=label;control.setAttribute('aria-label',label);
+      renderVoyageHud(voyageHud,next);if(next.mode==='play')el('islandName').textContent=locationName(next);
+      el('playDestination').textContent=next.location?locationName(next)+'-д үргэлжлүүлэх':'Далай дахь аяллаа үргэлжлүүлэх';
+      if(panel==='map')updateMapNavigation(el('panelContent'),next);
+    },
     showCatch(caught){
       const f=FISH[caught.speciesId],target=el('catchNotice');clearTimeout(catchTimer);
       target.replaceChildren(h('p',{class:'eyebrow'},'A NEW DISCOVERY'),h('img',{src:fishIcon(f.id),alt:f.name}),
