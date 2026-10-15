@@ -1,8 +1,6 @@
 import * as THREE from 'three';
 import {createGraphics} from './graphics.js';
-import {createWorld} from './world.js';
-import {createPlayer} from './player.js';
-import {createFishingRig} from './fishing-rig.js';
+import {createVoyageScene} from './voyage-scene.js';
 import {createInput} from './input.js';
 import {createFishingController} from './fishing.js';
 import {createLocalService} from './services/local.js';
@@ -37,46 +35,7 @@ function refreshDeviceSupport(){
   view.setDeviceSupport(collectDeviceSupport({window,document,navigator,graphics:gpu}));
 }
 
-function cameraCollision(world,target,desired){
-  let fraction=1;
-  for(const box of world.cameraColliders||[]){
-    let near=0,far=1;
-    for(const key of ['x','y','z']){
-      const d=desired[key]-target[key];
-      if(Math.abs(d)<1e-7){if(target[key]<box.min[key]||target[key]>box.max[key]){near=2;break;}}
-      else{const a=(box.min[key]-target[key])/d,b=(box.max[key]-target[key])/d;near=Math.max(near,Math.min(a,b));far=Math.min(far,Math.max(a,b));}
-    }
-    if(near<=far&&near>0.03&&near<1)fraction=Math.min(fraction,Math.max(0.15,near-0.035));
-  }
-  desired.lerpVectors(target,desired,fraction);
-  desired.y=Math.max(desired.y,world.heightAt(desired.x,desired.z)+0.65,0.8);return desired;
-}
-function worldFactory(islandId){
-  const world=createWorld(THREE,islandId),player=createPlayer(THREE,world),rig=createFishingRig(THREE,player),root=new THREE.Group();
-  root.add(world.group,player.group,rig.group);graphics.scene.add(root);graphics.setWorld(world);
-  let yaw=Math.PI,pitch=0.38,distance=12,clock=0;
-  const target=new THREE.Vector3(),desired=new THREE.Vector3();
-  graphics.camera.position.set(world.center.x+world.radius*0.55,30,world.center.z+world.radius*1.40);
-  player.reset(world);
-  const context={world,player,rig,
-    update(input,dt,fishing,mode){
-      clock+=dt;
-      if(mode==='play'){
-        yaw-=input.lookDeltaX*0.005;pitch=Math.max(0.15,Math.min(1.05,pitch+input.lookDeltaY*0.005));distance=Math.max(5,Math.min(16,distance+input.zoomDelta*0.018));
-        player.tick({...input,cameraYaw:yaw},dt,fishing.phase);
-        if(['charging','waiting','bite','reeling'].includes(fishing.phase)){const spot=world.fishingSpot(player.position);if(spot)player.faceDirection(spot.direction);}
-        const pose=player.getCameraPose(yaw,pitch,distance);target.set(pose.target.x,pose.target.y,pose.target.z);desired.set(pose.position.x,pose.position.y,pose.position.z);cameraCollision(world,target,desired);
-      }else{
-        player.tick({},dt,'idle');target.set(world.center.x,8,world.center.z+world.radius*0.52);
-        desired.set(world.center.x+world.radius*(0.48+Math.sin(clock*0.07)*0.12),31,world.center.z+world.radius*1.40);
-      }
-      graphics.camera.position.lerp(desired,dt?1-Math.exp(-dt*7):1);graphics.camera.lookAt(target);
-      world.update(dt,player.position);rig.update(dt,fishing,graphics.time,graphics.profile);
-    },
-    dispose(){graphics.scene.remove(root);rig.dispose();player.dispose();world.dispose();}
-  };
-  currentScene=context;return context;
-}
+function worldFactory(islandId,{totalXp=0}={}){currentScene=createVoyageScene(THREE,{islandId,totalXp,graphics});return currentScene;}
 function syncAccountView(){
   const local=localService.getSnapshot(),hasProgress=local.coins||local.totalXp||local.stats.totalCaught||local.fish.length||local.collection.length||local.rods.length>1;
   view.setAccount({user:currentAuthUser?{email:currentAuthUser.email}:null,connected:app?.getService().mode==='online',...(onlineService?.getAccountState()||{canImport:false,importedFromLocal:false}),local:hasProgress?local:null});

@@ -24,7 +24,7 @@ function label(T,text){
   const texture=new T.CanvasTexture(canvas);texture.colorSpace=T.SRGBColorSpace;
   const sprite=new T.Sprite(new T.SpriteMaterial({map:texture,transparent:true,depthWrite:false}));sprite.scale.set(6.5,1.22,1);return sprite;
 }
-export function createWorld(T,islandId) {
+export function createWorld(T,islandId,{distantIslands=true,decorativeBoat=true}={}) {
   const model=createTerrainModel(islandId),group=new T.Group(),lods=[],instances=[],random=seededRandom(model.meta.seed),matrix=new T.Matrix4(),dummy=new T.Object3D();
   const material=(color,options={})=>new T.MeshStandardMaterial({color,roughness:0.9,...options});
   const terrainMat=material('#ffffff',{vertexColors:true});
@@ -58,9 +58,9 @@ export function createWorld(T,islandId) {
   const merchantLabel=label(T,'Худалдаачин');if(merchantLabel){merchantLabel.position.set(model.seller.x,model.seller.y+3.35,model.seller.z);group.add(merchantLabel);}
   const ferryman=createCharacter(T,{shirt:'#567f98',rod:false});ferryman.group.position.set(model.ferry.x,model.ferry.y,model.ferry.z);group.add(ferryman.group);
   batchStaticMeshes(T,merchant.group,{recursive:true});batchStaticMeshes(T,ferryman.group,{recursive:true});
-  const ferryLabel=label(T,'Арал руу аялах');if(ferryLabel){ferryLabel.position.set(model.ferry.x,model.ferry.y+3.35,model.ferry.z);group.add(ferryLabel);}
+  const ferryLabel=label(T,'Завь дуудах');if(ferryLabel){ferryLabel.position.set(model.ferry.x,model.ferry.y+3.35,model.ferry.z);group.add(ferryLabel);}
   for(const p of [model.seller,model.ferry]){const ring=new T.Mesh(new T.RingGeometry(1.6,1.85,32),new T.MeshBasicMaterial({color:'#e8d59f',transparent:true,opacity:0.45,side:T.DoubleSide,depthWrite:false}));ring.rotation.x=-Math.PI/2;ring.position.set(p.x,p.y+0.035,p.z);group.add(ring);}
-  const boat=new T.Group();boat.position.set(cx+14,0.7,cz+r*1.01);group.add(boat);
+  const boat=new T.Group();boat.visible=decorativeBoat;boat.position.set(cx+14,0.7,cz+r*1.01);group.add(boat);
   const boatMesh=(g,m,x,y,z)=>{const node=new T.Mesh(g,m);node.position.set(x,y,z);node.castShadow=true;boat.add(node);return node;};
   boatMesh(new T.BoxGeometry(4.1,1.2,8),material('#477d8c'),0,0,0);
   const bow=boatMesh(new T.ConeGeometry(2.05,3.1,4),material('#477d8c'),0,0,5.05);bow.rotation.x=Math.PI/2;bow.rotation.z=Math.PI/4;
@@ -104,7 +104,7 @@ export function createWorld(T,islandId) {
   }
   instance(new T.DodecahedronGeometry(1,0),material(model.meta.rock),rocks.length,rocks);
   if(model.meta.biome!=='alpine')instance(new T.ConeGeometry(0.8,1.3,3),material(model.meta.biome==='coral'?'#b39b69':'#76965f',{side:T.DoubleSide}),grass.length,grass,null,false);
-  for(const meta of Object.values(ISLANDS)){
+  if(distantIslands)for(const meta of Object.values(ISLANDS)){
     if(meta.id===islandId)continue;
     const m=mesh(new T.CylinderGeometry(meta.radius*0.9,meta.radius,8,48),material(meta.ground),meta.center[0],2,meta.center[1]);
     m.castShadow=false;

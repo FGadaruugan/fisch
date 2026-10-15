@@ -50,7 +50,8 @@
     </main>
 
     <section id="playHud" class="play-hud" hidden>
-      <div class="location-card" data-gui="location"><span class="eyebrow">CURRENT ISLAND</span><b id="islandName">Palm Bay</b><span id="islandTime">10:30</span></div>
+      <div class="location-card" data-gui="location"><span class="eyebrow">CURRENT LOCATION</span><b id="islandName">Palm Bay</b><span id="islandTime">10:30</span></div>
+      <div id="voyageHud" class="voyage-hud" aria-label="Аяллын чиглэл"><span data-voyage-motion>Алхаж байна</span><b data-voyage-heading></b><i data-voyage-arrow aria-hidden="true" hidden>↑</i><small data-voyage-route>Map дээр чиглэлээ сонгоорой</small></div>
       <nav class="hud-menu" aria-label="Тоглоомын цэс">
         <button class="icon-button" data-command="open" data-payload='{"panel":"backpack"}' aria-label="Backpack">🎒</button>
         <button class="icon-button" data-command="open" data-payload='{"panel":"map"}' aria-label="Арлууд">⌁</button>
