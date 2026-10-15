@@ -2,6 +2,16 @@
 
 A playable local and account-based 3D fishing game, delivered on the requested GitHub repository.
 
+## Installable app — 2026-10-15
+
+The approved app-like direction is implemented as standalone PWA metadata and an install control inside the existing Settings flow. The manifest keeps id, scope and start_url at the same /fisch/ base for both Pages publishers. Both HTML pages reference the shared manifest; the static packager copies it alongside opaque 192/512 PNG icons and a 180 PNG Apple touch icon. The fish mark comes from the existing project favicon, with its complete silhouette inside the maskable safe circle. The editable SVG source is committed.
+
+The install controller captures beforeinstallprompt without opening it automatically, calls prompt synchronously in the initiating command, consumes each offer once, coalesces repeated taps, handles rejection/dismissal and permits a fresh offer. It supports both modern prompt results and older userChoice promises. Only appinstalled or an observed standalone display signal establishes app state. Standalone launch evidence persists within the page when the existing Play action enters fullscreen; ordinary browser fullscreen does not establish app state. Absence of an offer exposes Android/iOS/desktop guidance rather than asserting lack of device support. Settings updates the existing card without recreating its focused controls; installation state owns its own busy flag. Controller listeners are released on disposal.
+
+This increment adds no service worker or offline claim. Static assets retain ordinary deployment caching, and Auth/API requests keep their existing behavior. Browser/device installation and standalone Google popup behavior require a real device check; automated coverage verifies prompt timing, offer lifecycle, fallback, display signals and cleanup. The build check validates manifest scope and actual PNG dimensions.
+
+References: [installability](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/Making_PWAs_installable), [gesture-bound one-shot prompt](https://developer.mozilla.org/en-US/docs/Web/API/BeforeInstallPromptEvent/prompt), [install lifecycle](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/How_to/Trigger_install_prompt), [Android Chrome installation](https://support.google.com/chrome/answer/9658361?co=GENIE.Platform%3DAndroid&hl=en).
+
 ## Device support — 2026-10-15
 
 Settings and graphics-failure UI expose support for the actual WebGL 2 context, fullscreen, Web Audio API, detected touch/pointer input, and Local storage availability. Statuses distinguish supported, unavailable/blocked, and unknown. Context loss or an unverified WebGL constructor never imply unsupported hardware. Storage uses a unique temporary key, restores an existing collision, and treats quota exhaustion as uncertain. It neither requests fullscreen nor starts audio nor creates extra GPU contexts. The refresh action remains available during other work and is usable before App startup.
