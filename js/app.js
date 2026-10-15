@@ -1,18 +1,20 @@
+import {createFavorites} from './favorites.js';
 import {operationId} from './services/local.js';
 import {GameError} from './errors.js';
 import {canVisit} from './progression.js';
 
 /** Owns game lifecycle; rendering, persistence and input are injected boundaries. */
-export function createApp({service,fishing,input,worldFactory,view}) {
+export function createApp({service,fishing,input,worldFactory,view,favoriteStorage}) {
   let mode='lobby',panel=null,visible=true,disposed=false,busyCount=0,generation=0,activeTicket=null,held=false,previousAction=false,pendingFinish=null,destination=null,elapsed=0,arrivalRetry=0,pendingArrival=null;
   let scene=worldFactory(service.getSnapshot().lastIsland,{totalXp:service.getSnapshot().totalXp}),unsubscribe=()=>{};
   const isBusy=()=>busyCount>0;
   const syncInput=()=>input.setEnabled(visible&&mode==='play'&&!panel&&!disposed);
   const changeBusy=delta=>{busyCount=Math.max(0,busyCount+delta);view.setBusy(isBusy());};
   const fail=error=>view.showNotice(error?.code||'UNKNOWN');
+  const favorites=createFavorites({storage:favoriteStorage,onError:code=>view.showNotice(code)});
   const near=point=>!!point&&Math.hypot(scene.player.position.x-point.x,scene.player.position.z-point.z)<7;
   const nearSecret=()=>mode==='play'&&scene.player.motion==='walking'&&near(scene.world.secret);
-  function bind(){unsubscribe=service.subscribe(snapshot=>{if(!disposed){scene.setAccess?.(snapshot.totalXp);view.renderSnapshot(snapshot);}});}
+  function bind(){unsubscribe=service.subscribe(snapshot=>{if(!disposed){scene.setAccess?.(snapshot.totalXp);view.renderSnapshot(favorites.decorate(service,snapshot));}});}
   function cancelActive(){
     generation++;held=false;previousAction=false;fishing.cancel();input.releaseAll();
     const ticket=activeTicket;activeTicket=null;
@@ -96,9 +98,14 @@ export function createApp({service,fishing,input,worldFactory,view}) {
       }
       case 'equip_rod':await run(()=>service.equipRod(payload.rodId));break;
       case 'update_profile':await run(()=>service.updateProfile(payload));break;
-      case 'sell_fish':case 'sell_all':
+      case 'toggle_favorite':
+        if(disposed||isBusy())break;
+        favorites.toggle(service,payload.id);view.renderSnapshot(favorites.decorate(service,service.getSnapshot()));break;
+      case 'sell_fish':case 'sell_all': {
         if(mode!=='play'||!near(scene.world.seller)){view.showNotice('NEAR_MERCHANT');break;}
-        await run(()=>service.sellFish(command==='sell_all'?service.getSnapshot().fish.map(f=>f.id):[payload.id],operationId()));break;
+        const ids=command==='sell_all'?service.getSnapshot().fish.filter(f=>!favorites.has(service,f.id)).map(f=>f.id):[payload.id];
+        if(ids.length)await run(()=>service.sellFish(ids,operationId()));break;
+      }
       default:fail(new GameError('UNKNOWN_ACTION'));
     }
   }

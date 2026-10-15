@@ -402,3 +402,10 @@ body[data-fishing-active="true"] .context-hint{opacity:0}
 .account-window h1 { font-family: Georgia,serif; font-size: 36px; }
 .account-window p { line-height: 1.6; }
 @media (max-width: 600px) { .account-card { padding: 16px; } .account-actions .btn { flex: 1; } .import-card { padding: 14px; } }
+
+/* Per-specimen favorites stay separate from the expandable fish details. */
+.fish-card{position:relative}
+.favorite-button{position:absolute;top:8px;right:8px;z-index:2;width:44px;height:44px;border:1px solid rgba(255,255,255,.2);border-radius:50%;background:#153d49;cursor:pointer;font-size:22px;display:grid;place-items:center}
+.favorite-button.active{background:#603346;border-color:#f4a0b5}
+.favorite-button:focus-visible{outline:3px solid #f4d58d;outline-offset:3px}
+.favorite-button:disabled{opacity:.5;cursor:wait}
