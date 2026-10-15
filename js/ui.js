@@ -20,7 +20,8 @@ export function createUI({document:doc,onCommand,onPhase=()=>{},onCatch=()=>{}})
   const isEditing=()=>el('panelContent').contains(doc.activeElement)&&['INPUT','TEXTAREA'].includes(doc.activeElement?.tagName);
   function renderPanel(){
     if(!snapshot||!panel)return;
-    const target=el('panelContent');let content;
+    const target=el('panelContent'),expanded=new Set([...target.querySelectorAll('details[data-catch-id][open]')].map(node=>node.dataset.catchId));
+    const focusedCatch=doc.activeElement?.tagName==='SUMMARY'?doc.activeElement.parentElement?.dataset.catchId:null;let content;
     if(panel==='backpack')content=renderBackpack(snapshot,{...filter,merchant:context.merchant&&mode==='play',onFilter:patch=>{filter={...filter,...patch};renderPanel();}});
     else if(panel==='profile')content=renderProfile(snapshot,gameMode,account);
     else if(panel==='shop')content=h('div',{},h('div',{class:'shop-balance'},h('span',{},'ТАНЫ COIN'),h('b',{},'✦ '+money(snapshot.coins))),renderRodShop(snapshot),renderBackpack(snapshot,{tab:'fish',rarity:'all',sort:'value',merchant:context.merchant&&mode==='play',onFilter:patch=>{filter={...filter,...patch};}}));
@@ -28,7 +29,9 @@ export function createUI({document:doc,onCommand,onPhase=()=>{},onCatch=()=>{}})
     else if(panel==='map')content=renderMap(snapshot);
     else if(panel==='top'||panel==='friends')content=renderSocial(panel,social);
     else content=h('div',{class:'guide-panel'},h('h3',{},'Эхний загасаа барих'),h('ol',{},h('li',{},'WASD эсвэл joystick ашиглан тавцангийн үзүүрт оч.'),h('li',{},'F эсвэл Шидэх товчоо дарж бариад сулла.'),h('li',{},'Хөвөгч дохио өгөхөд F / Татах товчоо дахин дар.'),h('li',{},'Товчийг дарж/суллан барыг загасны тэмдэгтэй давхцуул.'),h('li',{},'Backpack-доо загасныхаа нэр, кг-г хар. Худалдаачинд зарж coin аваарай.')),h('h3',{},'Удирдлага'),h('p',{},'WASD / сум — алхах · Space — үсрэх · Mouse drag — камер · F — загасчлах · E — харилцах · B — Backpack · Esc — цэс'),h('p',{},'Утас: зүүн joystick-оор алхаж, дэлгэцийн баруун хоосон хэсгийг чирж камераа эргүүлнэ. Хоёр хуруугаар камерын зайг өөрчилнө.'));
-    target.replaceChildren(content);applyBusy();
+    let nextFocus;
+    for(const detail of content.querySelectorAll('details[data-catch-id]')){detail.open=expanded.has(detail.dataset.catchId);if(detail.dataset.catchId===focusedCatch)nextFocus=detail.querySelector('summary');}
+    target.replaceChildren(content);applyBusy();nextFocus?.focus({preventScroll:true});
   }
   function applyBusy(){
     const busy=busySources.size>0;doc.body.dataset.busy=String(busy);
@@ -67,7 +70,7 @@ export function createUI({document:doc,onCommand,onPhase=()=>{},onCatch=()=>{}})
     if(!panel)return;
     if(event.key==='Escape'&&!event.isComposing){event.preventDefault();void send('close');}
     if(event.key==='Tab'){
-      const elements=[...el('modal').querySelectorAll('button:not([disabled]),input:not([disabled]),select:not([disabled]),a[href]')].filter(n=>n.getClientRects().length);
+      const elements=[...el('modal').querySelectorAll('button:not([disabled]),input:not([disabled]),select:not([disabled]),a[href],summary')].filter(n=>n.getClientRects().length);
       const first=elements[0],last=elements.at(-1);if(!first)return;
       if(event.shiftKey&&doc.activeElement===first){event.preventDefault();last.focus();}
       else if(!event.shiftKey&&doc.activeElement===last){event.preventDefault();first.focus();}
