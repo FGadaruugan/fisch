@@ -2,6 +2,14 @@
 
 A playable local and account-based 3D fishing game, delivered on the requested GitHub repository.
 
+## Device support — 2026-10-15
+
+Settings and graphics-failure UI expose support for the actual WebGL 2 context, fullscreen, Web Audio API, detected touch/pointer input, and Local storage availability. Statuses distinguish supported, unavailable/blocked, and unknown. Context loss or an unverified WebGL constructor never imply unsupported hardware. Storage uses a unique temporary key, restores an existing collision, and treats quota exhaustion as uncertain. It neither requests fullscreen nor starts audio nor creates extra GPU contexts. The refresh action remains available during other work and is usable before App startup.
+
+Fullscreen control and its report share one permission-aware detector. Live FPS, RAF and Quality text refresh together; no physical display support or achievable frame rate is inferred. The error screen is scrollable and keeps keyboard focus within its retry/diagnostics controls. This remains a client-only GitHub Pages change.
+
+API references: [fullscreenEnabled](https://developer.mozilla.org/en-US/docs/Web/API/Document/fullscreenEnabled), [storage availability](https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API/Using_the_Web_Storage_API), [maxTouchPoints](https://developer.mozilla.org/en-US/docs/Web/API/Navigator/maxTouchPoints), [requestAnimationFrame](https://developer.mozilla.org/en-US/docs/Web/API/Window/requestAnimationFrame). WebGL 2 context and capability fields were checked against the pinned Three.js 0.186.0 implementation.
+
 ## Profile and specimen details — 2026-10-15
 
 The active delivery target is FGadaruugan/fisch and its GitHub Pages game. Profile reads lifetime rarity counts and its saved personal-best price even after sale, and derives island access from canonical XP thresholds. Backpack cards use native details/summary disclosures with actual specimen name, kg, rarity, value, island and local catch date; unknown legacy dates are labeled unavailable. Selling remains a separate action. Open specimens and summary focus survive snapshot refresh, and summaries participate in the existing modal keyboard focus trap. The save/API contracts are unchanged.

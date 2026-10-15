@@ -1,8 +1,13 @@
 /** Keep the browser request inside the click's user activation; preserve play on denial. */
+export function supportsFullscreen(doc,element=doc?.documentElement){
+  const standard=typeof element?.requestFullscreen==='function';
+  const permission=standard?doc?.fullscreenEnabled:doc?.webkitFullscreenEnabled??doc?.fullscreenEnabled;
+  return permission!==false&&(standard||typeof element?.webkitRequestFullscreen==='function');
+}
 export function createFullscreenControl({document:doc,element=doc.documentElement,button,onResize=()=>{},onUnavailable=()=>{}}){
   let pending=null,disposed=false;
   const active=()=>Boolean(doc.fullscreenElement||doc.webkitFullscreenElement);
-  const supported=()=>doc.fullscreenEnabled!==false&&Boolean(element.requestFullscreen||element.webkitRequestFullscreen);
+  const supported=()=>supportsFullscreen(doc,element);
   let previous=active();
   function sync(){
     if(disposed)return;const value=active();doc.body.dataset.fullscreen=String(value);
