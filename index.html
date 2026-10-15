@@ -15,12 +15,12 @@
     <header class="topbar">
       <button class="wordmark" data-command="lobby" aria-label="Lobby руу">fisch<span>TIDES & ISLANDS</span></button>
       <div class="topbar-right">
-        <span id="connectionBadge" class="connection-badge"><i></i> LOCAL</span>
+        <span id="connectionBadge" class="connection-badge" data-gui="connection"><i></i> LOCAL</span>
         <button class="profile-pill" data-command="open" data-payload='{"panel":"profile"}'>
           <span id="headerAvatar" class="avatar">🎣</span>
           <span class="profile-copy"><b id="playerName">Fisher</b><span id="playerLevel">LV. 1</span><span class="mini-xp"><i id="headerXp"></i></span></span>
         </button>
-        <span class="coin-pill"><span class="coin-icon">✦</span><b id="coinCount">0</b></span>
+        <span class="coin-pill" data-gui="coins"><span class="coin-icon">✦</span><b id="coinCount">0</b></span>
         <button id="fullscreenButton" class="icon-button fullscreen-button" data-command="fullscreen" aria-label="Бүтэн дэлгэц" aria-pressed="false" title="Бүтэн дэлгэц">⛶</button>
         <button class="icon-button settings-button" data-command="open" data-payload='{"panel":"settings"}' aria-label="Graphics ба тохиргоо">⚙</button>
       </div>
@@ -47,16 +47,16 @@
     </main>
 
     <section id="playHud" class="play-hud" hidden>
-      <div class="location-card"><span class="eyebrow">CURRENT ISLAND</span><b id="islandName">Palm Bay</b><span id="islandTime">10:30</span></div>
+      <div class="location-card" data-gui="location"><span class="eyebrow">CURRENT ISLAND</span><b id="islandName">Palm Bay</b><span id="islandTime">10:30</span></div>
       <nav class="hud-menu" aria-label="Тоглоомын цэс">
         <button class="icon-button" data-command="open" data-payload='{"panel":"backpack"}' aria-label="Backpack">🎒</button>
         <button class="icon-button" data-command="open" data-payload='{"panel":"map"}' aria-label="Арлууд">⌁</button>
         <button class="icon-button" data-command="open" data-payload='{"panel":"guide"}' aria-label="Удирдлага">?</button>
         <button class="icon-button" data-command="lobby" aria-label="Lobby руу">⌂</button>
       </nav>
-      <div class="rod-card"><span>ТОНОГЛОСОН САВАА</span><b id="rodName">Driftwood Rod</b></div>
-      <div id="contextHint" class="context-hint">Тавцангийн үзүүрт очиж загасчлаарай.</div>
-      <div class="desktop-hints"><kbd>W A S D</kbd> Алхах <kbd>F</kbd> Загасчлах <kbd>E</kbd> Харилцах <kbd>B</kbd> Backpack</div>
+      <div class="rod-card" data-gui="rod"><span>ТОНОГЛОСОН САВАА</span><b id="rodName">Driftwood Rod</b></div>
+      <div id="contextHint" class="context-hint" data-gui="contextHint">Тавцангийн үзүүрт очиж загасчлаарай.</div>
+      <div class="desktop-hints" data-gui="controlsHint"><kbd>W A S D</kbd> Алхах <kbd>F</kbd> Загасчлах <kbd>E</kbd> Харилцах <kbd>B</kbd> Backpack</div>
     </section>
 
     <div id="touchControls" class="touch-controls" hidden>
@@ -76,7 +76,7 @@
       <p id="fishingTip">Хүчээ сонгоод товчоо суллаарай.</p>
     </section>
 
-    <aside id="performanceHud" class="performance-hud">
+    <aside id="performanceHud" class="performance-hud" data-gui="stats">
       <div class="performance-top"><i></i><b id="statsFps">— FPS</b><span id="statsHz">RAF — Hz</span><span id="statsQuality">AUTO</span></div>
       <div id="statsBars" class="stats-bars" aria-hidden="true"></div>
       <small id="statsDetail">Хэмжилт эхэлж байна…</small>
@@ -88,7 +88,7 @@
         <div id="panelContent" class="panel-content"></div>
       </section>
     </div>
-    <div id="catchNotice" class="catch-notice" hidden></div>
+    <div id="catchNotice" class="catch-notice" data-gui="catchNotice" hidden></div>
     <div id="notices" class="notices" role="status" aria-live="polite"></div>
     <div id="loading" class="loading-screen"><div class="loading-mark">fisch</div><p id="loadingText">Далайг бэлдэж байна…</p><div class="loading-wave"><i></i><i></i><i></i></div><button id="retryButton" class="btn primary" hidden>Дахин оролдох</button></div>
   </div>

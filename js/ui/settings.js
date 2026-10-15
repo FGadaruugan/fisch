@@ -1,4 +1,5 @@
-import {h} from './dom.js';
+import {h,button} from './dom.js';
+import {GUI_OPTIONS,GUI_DEFAULTS} from '../gui.js';
 function select(label,key,options,value){
   const control=h('select',{'data-setting':key,'data-number':key==='targetFps'?'true':'false'},...options.map(([v,t])=>h('option',{value:v},t)));control.value=String(value);
   return h('label',{class:'setting-row'},h('span',{},h('b',{},label)),control);
@@ -12,6 +13,16 @@ function toggle(label,key,value,description){
 export function renderSettings(settings,stats={}){
   const root=h('div',{class:'settings-panel'});
   root.append(h('div',{class:'graphics-summary'},h('span',{},'LIVE GRAPHICS'),h('b',{},(stats.fps||'—')+' FPS'),h('span',{},'RAF ≈ '+(stats.hz||'—')+' Hz'),h('span',{},stats.quality||'Auto')));
+  const gui=h('section',{class:'gui-settings'},h('h3',{class:'settings-heading'},'GUI · Дэлгэцийн мэдээлэл'),h('p',{class:'help-text'},'Хэрэгтэй мэдээллээ ON, хэрэггүйг OFF болгоорой. Анхны тохиргоо бүгд ON. Сонголт энэ төхөөрөмжид хадгалагдана.'));
+  for(const option of GUI_OPTIONS)gui.append(h('label',{class:'setting-row'},h('span',{},h('b',{},option.label),h('small',{},option.description)),h('span',{class:'switch gui-switch'},h('input',{type:'checkbox',checked:settings[option.key]!==false,'data-setting':option.key}),h('i',{}),h('b',{class:'gui-state','aria-hidden':'true'}))));
+  gui.append(button('Бүх GUI-г ON болгох','settings',GUI_DEFAULTS,'btn subtle gui-restore'),h('h3',{class:'settings-heading'},'Байнга ON'));
+  for(const [label,description]of [
+    ['Цэс ба үндсэн товчнууд','Settings, Profile, Backpack, Islands, Lobby, бүтэн дэлгэц'],
+    ['Тоглох удирдлага','Joystick, үсрэх, загасчлах, харилцах'],
+    ['Загас татах bar ба дохио','Загасчлалын үеийн хүч, bite, reel, ахиц'],
+    ['Алдаа ба account мэдэгдэл','Хадгалалт, нэвтрэлт, холболтын чухал мэдээлэл']
+  ])gui.append(h('div',{class:'setting-row gui-locked'},h('span',{},h('b',{},label),h('small',{},description)),h('span',{class:'gui-lock'},'🔒 ON')));
+  root.append(gui);
   root.append(h('h3',{class:'settings-heading'},'Зураг ба гүйцэтгэл'),
     select('Quality','quality',[['auto','Auto · Adaptive'],['low','Low'],['medium','Medium'],['high','High'],['ultra','Ultra']],settings.quality),
     select('FPS cap','targetFps',[[30,'30 FPS'],[60,'60 FPS'],[90,'90 FPS'],[120,'120 FPS'],[144,'144 FPS'],[0,'Uncapped']],settings.targetFps),
@@ -20,7 +31,6 @@ export function renderSettings(settings,stats={}){
     toggle('Сүүдэр','shadows',settings.shadows,'Quality нь сүүдрийн нарийвчлалыг сонгоно.'),
     toggle('Манан','fog',settings.fog,'Холын эрэг ба агаарын гүн'),
     toggle('Орчны жижиг эффект','particles',settings.particles,'Цас, жижиг гэрэл'),
-    toggle('FPS хэмжилт','showStats',settings.showStats,'FPS, RAF cadence, frame time'),
     h('h3',{class:'settings-heading'},'Гэрэл ба цаг'),
     range('Гэрэлтүүлэг','exposure',settings.exposure,0.5,1.8,0.1,'×'),
     range('Өдрийн цаг','timeOfDay',settings.timeOfDay,0,24,0.1,'h'),

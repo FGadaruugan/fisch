@@ -9,6 +9,7 @@ import {renderMap} from './ui/map.js';
 import {renderSocial} from './ui/social.js';
 import {h,empty,badge,money} from './ui/dom.js';
 import {fishIcon} from './models/fish.js';
+import {applyGuiVisibility} from './gui.js';
 
 const PANEL_TITLES={backpack:['YOUR COLLECTION','Backpack'],profile:['YOUR STORY','Profile'],shop:['THE NEXT UPGRADE','Rod shop'],map:['BEYOND THE HORIZON','Islands'],settings:['MAKE IT YOURS','Graphics & settings'],top:['THE BEST OF THE SEA','Top 30'],friends:['A SHARED JOURNEY','Friends'],guide:['YOUR FIRST CAST','Удирдлага']};
 export function createUI({document:doc,onCommand,onPhase=()=>{},onCatch=()=>{}}) {
@@ -100,7 +101,7 @@ export function createUI({document:doc,onCommand,onPhase=()=>{},onCatch=()=>{}})
       target.style.setProperty('--accent',RARITIES[f.rarity].color);target.hidden=false;catchTimer=setTimeout(()=>target.hidden=true,3800);onCatch(caught);
     },
     setBusy(value,source='game'){if(value)busySources.add(source);else busySources.delete(source);applyBusy();},
-    setSettings(next){settings=next;el('performanceHud').hidden=!settings.showStats;},
+    setSettings(next){settings=next;applyGuiVisibility(root,settings);},
     setConnection(nextMode){gameMode=nextMode;el('connectionBadge').className='connection-badge '+(nextMode==='online'?'online':'');el('connectionBadge').replaceChildren(h('i',{}),nextMode==='online'?'ONLINE':'LOCAL');if(panel==='profile'&&!isEditing())renderPanel();},
     setSocial(next){social={...social,...next};if(['top','friends'].includes(panel)&&!isEditing())renderPanel();},
     setAccount(next){account={...account,...next};if(panel==='profile'&&!isEditing())renderPanel();},

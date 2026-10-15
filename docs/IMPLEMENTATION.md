@@ -2,6 +2,10 @@
 
 A playable local and account-based 3D fishing game, delivered on the requested GitHub repository.
 
+## Selectable GUI — 2026-10-15
+
+Settings exposes eight informational overlays with ON/OFF switches and a GUI-only restore action. All new preferences default ON and survive the existing versioned settings reload; the prior FPS preference is retained. Navigation, interactive controls, fishing feedback and critical notices are not optional. The visibility layer also refuses to hide a marked element containing controls. It uses a separate attribute so toggling a timed catch notice cannot reopen an expired notice or change normal lobby/play/fishing visibility. No account or gameplay data is changed.
+
 - 25 species: 10 Normal / 8 Rare / 4 Legendary / 2 Mythic / 1 ???. Three large islands; Backpack, economy, progression, Profile and mobile controls.
 - Graphics: local Three.js bundle, procedural models/terrain/ocean/sky, LOD/instances, light cycle, shadows/fog, adaptive quality, FPS caps and measured FPS/RAF cadence.
 - 74 automated tests pass, including actual Three.js geometry and real Postgres/PGlite RLS/transaction tests.

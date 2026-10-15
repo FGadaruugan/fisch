@@ -7,6 +7,7 @@ button{cursor:pointer}
 button:disabled{cursor:default;opacity:.45}
 button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #d2b35c;outline-offset:3px}
 [hidden]{display:none!important}
+[data-gui-hidden]{display:none!important}
 #viewport{position:fixed;inset:0;width:100%;height:100dvh;display:block;touch-action:none}
 #shell{position:relative;width:100%;height:100dvh;overflow:hidden;pointer-events:none}
 #shell button,#shell input,#shell select,#shell a{pointer-events:auto}
@@ -212,6 +213,15 @@ input:not([type="range"]):not([type="radio"]):not([type="checkbox"]),select{bord
 .switch input:checked+i{background:#649078}
 .switch input:checked+i:after{transform:translateX(18px)}
 .switch input:focus-visible+i{outline:3px solid #d1b374;outline-offset:3px}
+.gui-settings{padding-bottom:10px}
+.gui-switch{width:88px;height:30px;display:flex;align-items:center}
+.gui-switch i{left:46px;top:3px;bottom:3px}
+.gui-switch .gui-state{font-size:10px;letter-spacing:1px;color:#859383}
+.gui-state:before{content:'OFF'}
+.gui-switch input:checked~.gui-state{color:#3b7654}
+.gui-switch input:checked~.gui-state:before{content:'ON'}
+.gui-restore{margin-top:15px}
+.gui-lock{width:88px;flex-shrink:0;text-align:center;padding:8px 5px;border:1px solid #cad9c7;border-radius:20px;background:#e3ebdb;color:#487559;font-size:10px;font-weight:600}
 .archipelago-map{height:250px;position:relative;border-radius:10px;overflow:hidden;background:radial-gradient(ellipse at center,#7eafa8,#386f7e);border:1px solid #bfd2c1;margin-bottom:20px}
 .map-grid-lines{position:absolute;inset:0;background-image:linear-gradient(#e7ede319 1px,transparent 1px),linear-gradient(90deg,#e7ede319 1px,transparent 1px);background-size:35px 35px}
 .map-ocean-label{position:absolute;left:7%;bottom:15%;font-size:8px;letter-spacing:3px;color:#d1e0ce;opacity:.6}
