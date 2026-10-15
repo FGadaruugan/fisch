@@ -1,0 +1,16 @@
+{
+  "id": "./",
+  "name": "Fisch Tides",
+  "short_name": "Fisch",
+  "description": "Гурван арал, 25 загас, өөрийн аялал. 3D загасчлалын тоглоом.",
+  "lang": "mn",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "theme_color": "#153d49",
+  "background_color": "#153d49",
+  "icons": [
+    {"src": "./assets/app-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "./assets/app-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+  ]
+}

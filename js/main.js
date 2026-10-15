@@ -16,6 +16,7 @@ import {createFullscreenControl} from './fullscreen.js';
 import {createPopupLogin} from './account-popup.js';
 import {createIdentityGuard} from './account-identity.js';
 import {collectDeviceSupport} from './device-support.js';
+import {createAppInstallControl} from './install.js';
 
 const byId=id=>document.getElementById(id),SETTINGS_KEY='fisch3d.settings.v1';
 let settings;try{settings=normalizeSettings(JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}'));}catch{settings=normalizeSettings();}
@@ -24,6 +25,7 @@ let socialState={connected:false,metric:'xp',friends:[],requests:{incoming:[],ou
 let accountClientPromise,accountClient,currentAuthUser=null,onlineOwner=null,identityTransition=null,accountSigning=false,authSubscription,connectionQueue=Promise.resolve();
 const identityGuard=createIdentityGuard();
 const view=createUI({document,onCommand:command,onPhase:phase=>audio?.phase(phase),onCatch:caught=>{audio?.catch();currentScene?.rig.showCatch(caught);}});
+const appInstall=createAppInstallControl({window,onChange:state=>view.setInstallState(state)});
 const fullscreen=createFullscreenControl({document,button:byId('fullscreenButton'),onResize:()=>graphics?.resize(),onUnavailable:()=>view.showNotice('FULLSCREEN_UNAVAILABLE')});
 audio=createAudio(()=>settings.volume);
 const localService=createLocalService({onStorageError:code=>view.showNotice(code)});
@@ -148,6 +150,7 @@ async function refreshSocial(payload={}){
   }catch(error){if(token===refreshGeneration){socialState={...socialState,loading:false,error:'Холболт тасарлаа. Дахин шалгаарай.'};view.setSocial(socialState);}}
 }
 async function command(name,payload={}){
+  if(name==='install_app')return appInstall.install();
   if(name==='support_refresh'){refreshDeviceSupport();return;}
   if(name==='fullscreen'){await fullscreen.toggle();return;}
   if(name==='settings'){
@@ -216,5 +219,5 @@ try{
   function visibility(value){app.setVisible(value);pacer.reset();graphics.resetMonitor();if(value)audio.resume();else audio.suspend();}
   document.addEventListener('visibilitychange',()=>visibility(!document.hidden));window.addEventListener('blur',()=>visibility(false));window.addEventListener('focus',()=>visibility(!document.hidden));
   byId('viewport').addEventListener('webglcontextlost',event=>{event.preventDefault();visibility(false);refreshDeviceSupport();view.showError('Графикийн холболт түр тасарлаа. Ахиц хадгалагдсан. Дахин оролдоорой.');});
-  window.addEventListener('beforeunload',()=>{cancelAnimationFrame(animationId);if(heartbeatTimer)clearInterval(heartbeatTimer);authSubscription?.unsubscribe();onlineService?.dispose();fullscreen.dispose();app.dispose();graphics.dispose();audio.dispose();view.dispose();},{once:true});
+  window.addEventListener('beforeunload',()=>{cancelAnimationFrame(animationId);if(heartbeatTimer)clearInterval(heartbeatTimer);authSubscription?.unsubscribe();onlineService?.dispose();appInstall.dispose();fullscreen.dispose();app.dispose();graphics.dispose();audio.dispose();view.dispose();},{once:true});
 }catch(error){console.error('Fisch startup failed',error);refreshDeviceSupport();view.showError('3D график нээгдсэнгүй. Доорх дэмжлэгийн мэдээллийг шалгаад дахин оролдоорой.');}

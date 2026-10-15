@@ -1,6 +1,7 @@
 import {h,button} from './dom.js';
 import {GUI_OPTIONS,GUI_DEFAULTS} from '../gui.js';
 import {renderDeviceSupport} from './device-support.js';
+import {renderInstallCard} from './install.js';
 function select(label,key,options,value){
   const control=h('select',{'data-setting':key,'data-number':key==='targetFps'?'true':'false'},...options.map(([v,t])=>h('option',{value:v},t)));control.value=String(value);
   return h('label',{class:'setting-row'},h('span',{},h('b',{},label)),control);
@@ -11,8 +12,9 @@ function range(label,key,value,min,max,step,unit=''){
 function toggle(label,key,value,description){
   return h('label',{class:'setting-row'},h('span',{},h('b',{},label),description?h('small',{},description):null),h('span',{class:'switch'},h('input',{type:'checkbox',checked:value,'data-setting':key}),h('i',{})));
 }
-export function renderSettings(settings,stats={},support={}){
+export function renderSettings(settings,stats={},support={},install={}){
   const root=h('div',{class:'settings-panel'});
+  root.append(renderInstallCard(install));
   root.append(h('div',{class:'graphics-summary'},h('span',{},'LIVE GRAPHICS'),h('b',{'data-live-stat':'fps'},(stats.fps||'—')+' FPS'),h('span',{'data-live-stat':'hz'},'RAF ≈ '+(stats.hz||'—')+' Hz'),h('span',{'data-live-stat':'quality'},stats.quality||'AUTO')),h('div',{'data-device-support':''},renderDeviceSupport(support)));
   const gui=h('section',{class:'gui-settings'},h('h3',{class:'settings-heading'},'GUI · Дэлгэцийн мэдээлэл'),h('p',{class:'help-text'},'Хэрэгтэй мэдээллээ ON, хэрэггүйг OFF болгоорой. Анхны тохиргоо бүгд ON. Сонголт энэ төхөөрөмжид хадгалагдана.'));
   for(const option of GUI_OPTIONS)gui.append(h('label',{class:'setting-row'},h('span',{},h('b',{},option.label),h('small',{},option.description)),h('span',{class:'switch gui-switch'},h('input',{type:'checkbox',checked:settings[option.key]!==false,'data-setting':option.key}),h('i',{}),h('b',{class:'gui-state','aria-hidden':'true'}))));
