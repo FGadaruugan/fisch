@@ -21,12 +21,12 @@ test('Profile keeps lifetime rarity counts and the record value after every fish
 test('Profile island progress follows the actual XP unlock boundaries',()=>{
   assert.equal(typeof info.getProfileInfo,'function');
   const state=createInitialState();
-  for(const [xp,expected]of [[0,[true,false,false]],[399,[true,false,false]],[400,[true,true,false]],[1599,[true,true,false]],[1600,[true,true,true]]]){
+  for(const [xp,expected]of [[0,[true,false,false,false]],[399,[true,false,false,false]],[400,[true,true,false,false]],[1599,[true,true,false,false]],[1600,[true,true,true,false]],[3599,[true,true,true,false]],[3600,[true,true,true,true]]]){
     state.totalXp=xp;
     assert.deepEqual(info.getProfileInfo(state).islands.map(island=>island.unlocked),expected);
   }
   state.lastIsland='frost';
-  assert.deepEqual(info.getProfileInfo(state).islands.map(island=>island.current),[false,false,true]);
+  assert.deepEqual(info.getProfileInfo(state).islands.map(island=>island.current),[false,false,true,false]);
   assert.equal(info.getProfileInfo(createInitialState()).best,null);
 });
 

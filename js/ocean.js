@@ -1,5 +1,6 @@
 import {ISLANDS,GAME} from './data.js';
 export function createOcean(T) {
+  const islandCount=Object.keys(ISLANDS).length;
   const uniforms={
     uTime:{value:0},uWave:{value:0.35},uDay:{value:1},uFog:{value:0.00045},uFogColor:{value:new T.Color('#b7dce0')},uSun:{value:new T.Vector3(0.5,0.7,0.3)},
     uCenters:{value:Object.values(ISLANDS).map(i=>new T.Vector4(i.center[0],i.center[1],i.radius,i.seed))}
@@ -12,9 +13,9 @@ export function createOcean(T) {
     'vWorld=(modelMatrix*vec4(p,1.)).xyz; gl_Position=projectionMatrix*viewMatrix*vec4(vWorld,1.); }'
   ].join('\n');
   const fragment=[
-    'uniform float uTime; uniform float uDay; uniform float uFog; uniform vec3 uFogColor; uniform vec3 uSun; uniform vec4 uCenters[3]; varying vec3 vWorld; varying vec3 vNormal;',
+    'uniform float uTime; uniform float uDay; uniform float uFog; uniform vec3 uFogColor; uniform vec3 uSun; uniform vec4 uCenters['+islandCount+']; varying vec3 vWorld; varying vec3 vNormal;',
     'void main(){float shore=10000.;',
-    'for(int i=0;i<3;i++){vec2 p=vWorld.xz-uCenters[i].xy;float a=atan(p.y,p.x);float r=uCenters[i].z*(1.+.045*sin(a*5.+uCenters[i].w)+.025*sin(a*9.-uCenters[i].w));shore=min(shore,length(p)-r);}',
+    'for(int i=0;i<'+islandCount+';i++){vec2 p=vWorld.xz-uCenters[i].xy;float a=atan(p.y,p.x);float r=uCenters[i].z*(1.+.045*sin(a*5.+uCenters[i].w)+.025*sin(a*9.-uCenters[i].w));shore=min(shore,length(p)-r);}',
     'vec3 V=normalize(cameraPosition-vWorld); vec3 N=normalize(vNormal);',
     'vec3 deep=vec3(.015,.20,.27);vec3 shallow=vec3(.22,.59,.54);vec3 color=mix(shallow,deep,smoothstep(0.,55.,shore));',
     'float fresnel=pow(1.-max(dot(N,V),0.),3.);color=mix(color,uFogColor*.80,fresnel*.62);',

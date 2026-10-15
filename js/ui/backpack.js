@@ -40,6 +40,7 @@ export function renderRodShop(state){
   const root=h('div',{class:'rod-grid'});
   for(const rod of Object.values(RODS)){
     const owned=state.rods.includes(rod.id),equipped=state.equippedRod===rod.id;
+    if(rod.acquisition==='trade'&&!owned)continue;
     root.append(h('article',{class:'rod-shop-card',style:{'--accent':rod.color}},
       h('div',{class:'rod-illustration'},h('i',{}),h('b',{},'◉')),
       h('div',{class:'rod-info'},h('p',{class:'eyebrow'},equipped?'EQUIPPED':owned?'OWNED':'UPGRADE YOUR VOYAGE'),h('h3',{},rod.name),h('p',{},rod.description),h('div',{class:'rod-attributes'},h('span',{},'Control '+Math.round(rod.width*100)+'%'),h('span',{},'Luck ×'+rod.luck))),

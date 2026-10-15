@@ -22,7 +22,7 @@ export function createArchipelago(T,islandId,totalXp){
   stream(model.spawn);
   return{
     ...model,group,
-    get islandId(){return model.islandId;},get meta(){return model.meta;},get center(){return model.center;},get radius(){return model.radius;},get spawn(){return model.spawn;},get seller(){return model.seller;},get ferry(){return model.ferry;},
+    get islandId(){return model.islandId;},get meta(){return model.meta;},get center(){return model.center;},get radius(){return model.radius;},get spawn(){return model.spawn;},get seller(){return model.seller;},get ferry(){return model.ferry;},get secret(){return model.secret;},
     get loadedCount(){return full.size;},get cameraColliders(){return [...full.values()].flatMap(world=>world.cameraColliders);},
     setQuality(next,preferences){profile=next;settings=preferences;for(const world of full.values())world.setQuality(profile,settings);},
     update(dt,position){stream(position);for(const world of full.values())world.update(dt,position);},

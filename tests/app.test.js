@@ -7,11 +7,12 @@ import {createInput} from '../js/input.js';
 import {createTerrainModel} from '../js/terrain.js';
 import {createNavigationModel} from '../js/navigation.js';
 import {SAVE_KEY,createInitialState} from '../js/save.js';
+import {FISH} from '../js/data.js';
 const feature=await loadFeature('../js/app.js');
 const flush=()=>new Promise(resolve=>setImmediate(resolve));
-function setup({xp=0}={}){
+function setup({xp=0,initial}={}){
   assert.equal(typeof feature.createApp,'function');
-  const win=new EventTarget(),input=createInput({window:win}),service=createLocalService({storage:memoryStorage({[SAVE_KEY]:JSON.stringify({...createInitialState(),totalXp:xp})}),rng:()=>0});
+  const win=new EventTarget(),input=createInput({window:win}),service=createLocalService({storage:memoryStorage({[SAVE_KEY]:JSON.stringify(initial||{...createInitialState(),totalXp:xp})}),rng:()=>0});
   const notices=[],caught=[],rendered=[];let busy=false,app;
   const view={renderSnapshot:s=>rendered.push(s),renderFishing(){},showPanel(){},showNotice:c=>notices.push(c),showCatch:f=>caught.push(f),setBusy:v=>{busy=v;}};
   const fishing=createFishingController({onFinish:event=>app.handleFinish(event)});
@@ -86,4 +87,25 @@ test('opening Settings during arrival preserves the reached island and the open 
   const s=setup({xp:1600});s.app.play();let finish;const gate=new Promise(resolve=>{finish=resolve;}),travel=s.service.travel;
   s.service.travel=async id=>{await gate;return travel(id);};const scene=s.app.getScene();Object.assign(scene.player.position,scene.world.models.coral.spawn);s.app.tick(.05);s.app.openPanel('settings');
   finish();await flush();assert.equal(scene.world.islandId,'coral');assert.equal(s.app.getState().panel,'settings');s.app.dispose();
+});
+function sanctuaryState(){
+  const state={...createInitialState(),totalXp:3600,coins:200000,lastIsland:'sanctuary'};
+  state.fish=['n11','r09','l05','m03','u02'].map((speciesId,i)=>({id:'offering-'+i,speciesId,islandId:'sanctuary',weightGrams:FISH[speciesId].minGrams,caughtAt:new Date(0).toISOString()}));return state;
+}
+test('the hidden shrine opens on E and exchanges only from its on-foot panel',async()=>{
+  const s=setup({initial:sanctuaryState()});s.app.play();
+  await s.app.dispatch('open',{panel:'secret'});assert.equal(s.app.getState().panel,null,'remote secret panel must stay closed');
+  await s.app.dispatch('trade_rod',{rodId:'eclipse'});assert.equal(s.service.getSnapshot().coins,200000);
+  const scene=s.app.getScene();assert.ok(scene.world.secret);Object.assign(scene.player.position,scene.world.secret);
+  s.key('KeyE',true);s.app.tick(.05);s.key('KeyE',false);assert.equal(s.app.getState().panel,'secret');
+  await s.app.dispatch('trade_rod',{rodId:'eclipse',position:{x:0,z:0}});
+  assert.equal(s.service.getSnapshot().coins,100000);assert.ok(s.service.getSnapshot().rods.includes('eclipse'));assert.ok(s.notices.includes('TRADE_SUCCESS'));s.app.dispose();
+});
+test('leaving the shrine or sitting in a boat invalidates a previously open trade panel',async()=>{
+  for(const motion of ['walking','sailing']){
+    const s=setup({initial:sanctuaryState()});s.app.play();const scene=s.app.getScene();assert.ok(scene.world.secret);
+    Object.assign(scene.player.position,scene.world.secret);s.app.openPanel('secret');assert.equal(s.app.getState().panel,'secret');
+    if(motion==='walking')scene.player.position.x+=20;else scene.player.motion='sailing';
+    await s.app.dispatch('trade_rod',{rodId:'eclipse'});assert.equal(s.service.getSnapshot().coins,200000);assert.equal(s.service.getSnapshot().fish.length,5);s.app.dispose();
+  }
 });

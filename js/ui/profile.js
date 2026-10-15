@@ -12,7 +12,7 @@ export function renderProfile(state,mode='local',account={}) {
   if(mode==='online')root.append(button('Local аялалд очих','switch_local',{},'btn subtle'));
   root.append(renderAccount(account,mode));
   root.append(h('div',{class:'xp-section'},h('div',{class:'xp-caption'},h('b',{},'Дараагийн эрэг рүү'),h('span',{},money(progress.current)+' / '+money(progress.needed)+' XP')),h('div',{class:'xp-track'},h('i',{style:{width:(progress.fraction*100)+'%'}}))));
-  root.append(h('div',{class:'stats-grid'},stat(money(state.stats.totalCaught),'Барьсан загас'),stat(state.collection.length+'/25','Нээгдсэн species'),stat('✦ '+money(state.coins),'Coin'),stat(best?formatKg(best.weightGrams)+' kg':'—','Хамгийн хүнд')));
+  root.append(h('div',{class:'stats-grid'},stat(money(state.stats.totalCaught),'Барьсан загас'),stat(state.collection.length+'/'+Object.keys(FISH).length,'Нээгдсэн species'),stat('✦ '+money(state.coins),'Coin'),stat(best?formatKg(best.weightGrams)+' kg':'—','Хамгийн хүнд')));
   if(best)root.append(h('div',{class:'personal-best'},h('img',{src:fishIcon(best.speciesId),alt:best.name}),h('div',{},h('p',{class:'eyebrow'},'PERSONAL BEST'),h('h3',{},best.name),badge(best.rarity,best.color)),h('div',{class:'record-values'},h('b',{},best.kg+' kg'),h('small',{},'✦ '+money(best.value)))));
   root.append(h('div',{class:'section-heading'},h('h3',{},'Барилтын статистик'),h('span',{},'Нийт барьсан · зарсан загас багтана')));
   const rarityStats=h('div',{class:'rarity-breakdown'});
@@ -31,7 +31,7 @@ export function renderProfile(state,mode='local',account={}) {
   const avatars=h('div',{class:'avatar-options'});
   AVATARS.forEach((avatar,index)=>avatars.append(h('label',{class:'avatar-choice'},h('input',{type:'radio',name:'avatar',value:index,checked:state.profile.avatar===index}),h('span',{},avatar))));
   form.append(avatars,h('button',{type:'submit',class:'btn primary'},'Хадгалах'));root.append(form);
-  root.append(h('div',{class:'section-heading'},h('h3',{},'Fish collection'),h('span',{},state.collection.length+' / 25')));
+  root.append(h('div',{class:'section-heading'},h('h3',{},'Fish collection'),h('span',{},state.collection.length+' / '+Object.keys(FISH).length)));
   const collection=h('div',{class:'collection-grid'});
   for(const f of Object.values(FISH)){const discovered=state.collection.includes(f.id);collection.append(h('div',{class:'collection-card'+(discovered?'':' locked'),style:{'--accent':RARITIES[f.rarity].color}},h('img',{src:fishIcon(f.id),alt:discovered?f.name:'Нээгдээгүй загас'}),h('b',{},discovered?f.name:'???'),h('small',{},f.rarity)));}
   root.append(collection);return root;

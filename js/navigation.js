@@ -16,7 +16,7 @@ export function createNavigationModel({islandId='palm',totalXp=0}={}){
   }
   return{
     models:terrains,
-    get islandId(){return current;},get meta(){return ISLANDS[current];},get center(){return terrains[current].center;},get radius(){return terrains[current].radius;},get spawn(){return terrains[current].spawn;},get seller(){return terrains[current].seller;},get ferry(){return terrains[current].ferry;},
+    get islandId(){return current;},get meta(){return ISLANDS[current];},get center(){return terrains[current].center;},get radius(){return terrains[current].radius;},get spawn(){return terrains[current].spawn;},get seller(){return terrains[current].seller;},get ferry(){return terrains[current].ferry;},get secret(){return terrains[current].secret;},
     setAccess(value){xp=value;},setIsland(id){if(!ISLANDS[id])throw new RangeError('Unknown island');current=id;},
     heightAt,canOccupy,isWalkable:canOccupy,isWater:(x,z)=>heightAt(x,z)<=WATER_LEVEL+.3,
     canSail:(x,z)=>inBounds(x,z)&&heightAt(x,z)<-.5,

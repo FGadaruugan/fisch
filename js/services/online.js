@@ -40,6 +40,7 @@ export async function createOnlineService({client,config={},profile,transport,de
     async cancelCast(ticketId){if(!ticketId||finished.has(ticketId))return null;try{return await execute('cancel_cast',{ticketId});}catch(error){if(error.code==='CAST_NOT_FOUND')return null;throw error;}},
     sellFish:(ids,id)=>execute('sell_fish',{ids:[...new Set(ids)].sort()},id),
     buyRod:(rodId,id)=>execute('buy_rod',{rodId},id),
+    tradeRod:(rodId,position,id)=>execute('trade_rod',{rodId,position:{x:position?.x,z:position?.z}},id),
     equipRod:rodId=>execute('equip_rod',{rodId}),
     travel:islandId=>execute('travel',{islandId}),
     updateProfile:profile=>execute('update_profile',profile),

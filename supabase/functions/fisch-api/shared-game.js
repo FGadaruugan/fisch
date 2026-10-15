@@ -19,12 +19,17 @@ var RARITIES = freeze(Object.assign(/* @__PURE__ */ Object.create(null), {
 var RODS = freeze(Object.assign(/* @__PURE__ */ Object.create(null), {
   starter: { id: "starter", name: "Driftwood Rod", description: "\u0422\u0430\u043D\u044B \u0430\u043D\u0445\u043D\u044B \u043D\u0430\u0439\u0434\u0432\u0430\u0440\u0442\u0430\u0439 \u0441\u0430\u0432\u0430\u0430.", price: 0, width: 0.24, luck: 1, color: "#a5825e" },
   river: { id: "river", name: "River Whisper", description: "\u0418\u043B\u04AF\u04AF \u04E9\u0440\u0433\u04E9\u043D \u0443\u0434\u0438\u0440\u0434\u0430\u0445 \u0431\u0430\u0440, \u0442\u0430\u0439\u0432\u0430\u043D \u0442\u0430\u0442\u0430\u043B\u0442.", price: 150, width: 0.3, luck: 1, color: "#60c9b5" },
-  ocean: { id: "ocean", name: "Ocean Sovereign", description: "\u04E8\u0440\u0433\u04E9\u043D \u0431\u0430\u0440, \u0445\u043E\u0432\u043E\u0440 \u0437\u0430\u0433\u0430\u0441\u043D\u044B \u0441\u043E\u043D\u0433\u043E\u043B\u0442\u044B\u043D \u0436\u0438\u043D +35%.", price: 650, width: 0.36, luck: 1.35, color: "#e7b34e" }
+  ocean: { id: "ocean", name: "Ocean Sovereign", description: "\u04E8\u0440\u0433\u04E9\u043D \u0431\u0430\u0440, \u0445\u043E\u0432\u043E\u0440 \u0437\u0430\u0433\u0430\u0441\u043D\u044B \u0441\u043E\u043D\u0433\u043E\u043B\u0442\u044B\u043D \u0436\u0438\u043D +35%.", price: 650, width: 0.36, luck: 1.35, color: "#e7b34e" },
+  jade: { id: "jade", name: "Jade Current", description: "\u0425\u0430\u0448 \u0447\u0443\u043B\u0443\u0443\u043D \u0431\u0430\u0440\u0438\u0443\u043B, \u0442\u043E\u0433\u0442\u0432\u043E\u0440\u0442\u043E\u0439 \u0443\u0434\u0438\u0440\u0434\u043B\u0430\u0433\u0430. \u0425\u043E\u0432\u043E\u0440 \u0437\u0430\u0433\u0430\u0441\u043D\u044B \u0441\u043E\u043D\u0433\u043E\u043B\u0442\u044B\u043D \u0436\u0438\u043D \xD71.75.", price: 1e4, width: 0.4, luck: 1.75, color: "#43b89a" },
+  temple: { id: "temple", name: "Temple Tide", description: "\u042D\u0440\u0442\u043D\u0438\u0439 \u0442\u0443\u0443\u0440\u0438\u0439\u043D \u0445\u04AF\u0447. \u0425\u043E\u0432\u043E\u0440 \u0437\u0430\u0433\u0430\u0441\u043D\u044B \u0441\u043E\u043D\u0433\u043E\u043B\u0442\u044B\u043D \u0436\u0438\u043D \xD72.5.", price: 5e4, width: 0.46, luck: 2.5, color: "#c7a45c" },
+  eclipse: { id: "eclipse", name: "Eclipse Relic", description: "\u0422\u0430\u0432\u0430\u043D \u04E9\u0440\u0433\u04E9\u043B\u04E9\u04E9\u0441 \u0441\u044D\u0440\u0441\u044D\u043D \u043D\u0443\u0443\u0446 \u0441\u0430\u0432\u0430\u0430. \u0425\u043E\u0432\u043E\u0440 \u0437\u0430\u0433\u0430\u0441\u043D\u044B \u0441\u043E\u043D\u0433\u043E\u043B\u0442\u044B\u043D \u0436\u0438\u043D \xD73.5.", price: 1e5, width: 0.52, luck: 3.5, color: "#ad8de0", acquisition: "trade" }
 }));
+var SECRET_TRADE = freeze({ rodId: "eclipse", islandId: "sanctuary", level: 7, price: 1e5, speciesIds: ["n11", "r09", "l05", "m03", "u02"], offset: [-112, -76], radius: 7 });
 var ISLANDS = freeze(Object.assign(/* @__PURE__ */ Object.create(null), {
   palm: { id: "palm", name: "Palm Bay", subtitle: "\u042D\u0445\u043B\u044D\u043B \u0431\u04AF\u0445\u044D\u043D \u043D\u044D\u0433 \u044D\u0440\u0433\u044D\u044D\u0441", biome: "tropical", level: 1, radius: 180, center: [0, 0], color: "#6cc9a8", sky: "#b1dfe0", sand: "#ead7ad", ground: "#638d4d", rock: "#8b9682", seed: 1842 },
   coral: { id: "coral", name: "Coral Reef", subtitle: "\u0428\u04AF\u0440\u044D\u043D \u044D\u0440\u0433\u0438\u0439\u043D \u043D\u0443\u0443\u0446", biome: "coral", level: 3, radius: 165, center: [-820, -650], color: "#ed998b", sky: "#d6d9e4", sand: "#f1c8b0", ground: "#798b5a", rock: "#aa6557", seed: 8221 },
-  frost: { id: "frost", name: "Frostpeak", subtitle: "\u041C\u04E9\u0441\u04E9\u043D \u0434\u043E\u043E\u0440\u0445 \u0434\u043E\u043C\u043E\u0433", biome: "alpine", level: 5, radius: 210, center: [650, -1120], color: "#9bcde2", sky: "#c4dce9", sand: "#dbe7e5", ground: "#91a5a6", rock: "#718892", seed: 9543 }
+  frost: { id: "frost", name: "Frostpeak", subtitle: "\u041C\u04E9\u0441\u04E9\u043D \u0434\u043E\u043E\u0440\u0445 \u0434\u043E\u043C\u043E\u0433", biome: "alpine", level: 5, radius: 210, center: [650, -1120], color: "#9bcde2", sky: "#c4dce9", sand: "#dbe7e5", ground: "#91a5a6", rock: "#718892", seed: 9543 },
+  sanctuary: { id: "sanctuary", name: "Sunken Sanctuary", subtitle: "\u0422\u0430\u0432\u0430\u043D \u0437\u0430\u0433\u0430\u0441, \u043C\u0430\u0440\u0442\u0430\u0433\u0434\u0441\u0430\u043D \u043D\u044D\u0433 \u043D\u0443\u0443\u0446", biome: "ruins", level: 7, radius: 225, center: [1070, 580], color: "#90b8a1", sky: "#c1d6d0", sand: "#d8ceae", ground: "#557a69", rock: "#747e76", seed: 6274 }
 }));
 var rows = [
   ["n01", "Silver Minnow", "Normal", 100, 450, "palm", "fish", "#a9d7db", "#e8eff0", 0.75],
@@ -51,7 +56,12 @@ var rows = [
   ["l04", "Starlight Ray", "Legendary", 1e4, 6e4, "frost", "ray", "#556caa", "#bbb9ee", 1.7],
   ["m01", "Phoenix Ray", "Mythic", 25e3, 12e4, "coral", "ray", "#e99a62", "#ffe3a1", 1.9],
   ["m02", "Frost Leviathan", "Mythic", 8e4, 4e5, "frost", "serpent", "#62becd", "#d7f4f5", 0.8],
-  ["u01", "Abyssal Sovereign", "???", 15e4, 1e6, "frost", "leviathan", "#554987", "#e889bf", 1.5]
+  ["u01", "Abyssal Sovereign", "???", 15e4, 1e6, "frost", "leviathan", "#554987", "#e889bf", 1.5],
+  ["n11", "Mossfin Carp", "Normal", 1500, 9e3, "sanctuary", "fish", "#6d9c83", "#d0d9a1", 1.2],
+  ["r09", "Jade Koi", "Rare", 4e3, 22e3, "sanctuary", "koi", "#36ad97", "#e6d9a3", 1.4],
+  ["l05", "Temple Arowana", "Legendary", 25e3, 14e4, "sanctuary", "fish", "#b99c54", "#f4dfa0", 1.65],
+  ["m03", "Spirit Serpent", "Mythic", 1e5, 5e5, "sanctuary", "serpent", "#80bfc2", "#e0c6f3", 0.9],
+  ["u02", "Eclipse Guardian", "???", 2e5, 12e5, "sanctuary", "leviathan", "#4b476b", "#cfa0df", 1.65]
 ];
 var FISH = freeze(Object.assign(/* @__PURE__ */ Object.create(null), Object.fromEntries(rows.map(([id, name, rarity, minGrams, maxGrams, islandId, family, color, accent, girth]) => [id, { id, name, rarity, minGrams, maxGrams, islandId, visual: { family, color, accent, girth } }]))));
 var speciesForIsland = (id) => Object.values(FISH).filter((fish) => fish.islandId === id);
@@ -147,6 +157,11 @@ var MESSAGES = Object.freeze({
   NOT_ENOUGH_COINS: "Coin \u0445\u04AF\u0440\u044D\u043B\u0446\u044D\u0445\u0433\u04AF\u0439 \u0431\u0430\u0439\u043D\u0430.",
   ROD_NOT_OWNED: "\u042D\u043D\u044D \u0441\u0430\u0432\u0430\u0430\u0433 \u044D\u0445\u043B\u044D\u044D\u0434 \u0445\u0443\u0434\u0430\u043B\u0434\u0430\u0436 \u0430\u0432\u0430\u0430\u0440\u0430\u0439.",
   ROD_ALREADY_OWNED: "\u042D\u043D\u044D \u0441\u0430\u0432\u0430\u0430 \u0442\u0430\u043D\u0434 \u0431\u0430\u0439\u0433\u0430\u0430.",
+  ROD_TRADE_ONLY: "\u042D\u043D\u044D \u043D\u0443\u0443\u0446 \u0441\u0430\u0432\u0430\u0430\u0433 \u044D\u043D\u0433\u0438\u0439\u043D \u0434\u044D\u043B\u0433\u04AF\u04AF\u0440\u044D\u044D\u0441 \u0430\u0432\u0430\u0445\u0433\u04AF\u0439. \u0414\u0430\u043B\u0434 \u04E9\u0440\u0433\u04E9\u043B\u0438\u0439\u043D \u0433\u0430\u0437\u0440\u044B\u0433 \u043E\u043B\u043E\u043E\u0440\u043E\u0439.",
+  TRADE_LEVEL_REQUIRED: "\u041D\u0443\u0443\u0446 \u0441\u043E\u043B\u0438\u043B\u0446\u043E\u043E\u043D\u0434 Lv.7 \u0445\u04AF\u0440\u0441\u044D\u043D \u0431\u0430\u0439\u0445 \u0445\u044D\u0440\u044D\u0433\u0442\u044D\u0439.",
+  TRADE_LOCATION_REQUIRED: "Sunken Sanctuary \u0430\u0440\u043B\u044B\u043D \u0434\u0430\u043B\u0434 \u0445\u0443\u0434\u0430\u043B\u0434\u0430\u0430\u0447\u043D\u044B \u0434\u044D\u0440\u0433\u044D\u0434 \u044F\u0432\u0433\u0430\u043D \u043E\u0447\u043E\u043E\u0440\u043E\u0439.",
+  MISSING_TRADE_FISH: "\u0428\u0438\u043D\u044D \u0430\u0440\u043B\u044B\u043D 5 \u0442\u04E9\u0440\u043B\u0438\u0439\u043D \u0437\u0430\u0433\u0430\u0441 \u0442\u0443\u0441 \u0431\u04AF\u0440 \u043D\u044D\u0433\u0438\u0439\u0433 Backpack-\u0434\u043E\u043E \u0430\u0432\u0447\u0440\u0430\u0430\u0440\u0430\u0439. \u0417\u0430\u0440\u0441\u0430\u043D \u0437\u0430\u0433\u0430\u0441 \u0442\u043E\u043E\u0446\u043E\u0433\u0434\u043E\u0445\u0433\u04AF\u0439.",
+  TRADE_SUCCESS: "\u0422\u0430\u0432\u0430\u043D \u04E9\u0440\u0433\u04E9\u043B \u0445\u04AF\u043B\u044D\u044D\u043D \u0430\u0432\u043B\u0430\u0430. Eclipse Relic \u0441\u0430\u0432\u0430\u0430 Backpack-\u0434 \u043D\u044D\u043C\u044D\u0433\u0434\u043B\u044D\u044D!",
   INVALID_FISH: "\u042D\u043D\u044D \u0437\u0430\u0433\u0430\u0441\u043D\u044B \u043C\u044D\u0434\u044D\u044D\u043B\u044D\u043B \u0445\u04AF\u0447\u0438\u043D\u0433\u04AF\u0439 \u0431\u0430\u0439\u043D\u0430.",
   INVALID_ROD: "\u0421\u0430\u0432\u0430\u0430\u043D\u044B \u043C\u044D\u0434\u044D\u044D\u043B\u044D\u043B \u0445\u04AF\u0447\u0438\u043D\u0433\u04AF\u0439 \u0431\u0430\u0439\u043D\u0430.",
   INVALID_PROFILE: "\u041D\u044D\u0440\u044D\u044D 1\u201318 \u0442\u044D\u043C\u0434\u044D\u0433\u0442\u044D\u044D\u0440 \u043E\u0440\u0443\u0443\u043B\u0430\u0430\u0440\u0430\u0439.",
@@ -184,6 +199,26 @@ var MESSAGES = Object.freeze({
   UNKNOWN: "\u04AE\u0439\u043B\u0434\u043B\u0438\u0439\u0433 \u0445\u0438\u0439\u0436 \u0447\u0430\u0434\u0441\u0430\u043D\u0433\u04AF\u0439. \u0414\u0430\u0445\u0438\u043D \u043E\u0440\u043E\u043B\u0434\u043E\u043E\u0440\u043E\u0439."
 });
 
+// js/trade.js
+function secretTradePoint() {
+  const center = ISLANDS[SECRET_TRADE.islandId].center;
+  return { x: center[0] + SECRET_TRADE.offset[0], z: center[1] + SECRET_TRADE.offset[1] };
+}
+function isAtSecretTrade(state, position) {
+  const point = secretTradePoint();
+  return state.lastIsland === SECRET_TRADE.islandId && !!position && !Array.isArray(position) && Number.isFinite(position.x) && Number.isFinite(position.z) && Math.hypot(position.x - point.x, position.z - point.z) < SECRET_TRADE.radius;
+}
+function getSecretTradeInfo(state) {
+  const requirements = SECRET_TRADE.speciesIds.map((speciesId) => {
+    const species = FISH[speciesId];
+    const fish = state.fish.filter((item) => item.speciesId === speciesId).reduce((lightest, item) => !lightest || item.weightGrams < lightest.weightGrams ? item : lightest, null);
+    return { speciesId, name: species.name, rarity: species.rarity, fish };
+  });
+  const owned = state.rods.includes(SECRET_TRADE.rodId), level = levelForXp(state.totalXp);
+  const code = owned ? "ROD_ALREADY_OWNED" : level < SECRET_TRADE.level ? "TRADE_LEVEL_REQUIRED" : requirements.some((row) => !row.fish) ? "MISSING_TRADE_FISH" : state.coins < SECRET_TRADE.price ? "NOT_ENOUGH_COINS" : null;
+  return { ...SECRET_TRADE, requirements, owned, currentLevel: level, code, ready: !code };
+}
+
 // js/game-rules.js
 function applyGameMutation(state, { action, payload = {} }, { now = Date.now } = {}) {
   const next = structuredClone(state);
@@ -217,10 +252,23 @@ function applyGameMutation(state, { action, payload = {} }, { now = Date.now } =
     case "buy_rod": {
       const rod = RODS[payload.rodId];
       if (!rod) throw new GameError("INVALID_ROD");
+      if (rod.acquisition === "trade") throw new GameError("ROD_TRADE_ONLY");
       if (next.rods.includes(rod.id)) throw new GameError("ROD_ALREADY_OWNED");
       if (next.coins < rod.price) throw new GameError("NOT_ENOUGH_COINS");
       next.coins -= rod.price;
       next.rods.push(rod.id);
+      break;
+    }
+    case "trade_rod": {
+      const info = getSecretTradeInfo(next);
+      if (payload.rodId !== info.rodId) throw new GameError("INVALID_ROD");
+      if (info.code) throw new GameError(info.code);
+      if (!isAtSecretTrade(next, payload.position)) throw new GameError("TRADE_LOCATION_REQUIRED");
+      const consumedIds = info.requirements.map((row) => row.fish.id), ids = new Set(consumedIds);
+      next.coins -= info.price;
+      next.fish = next.fish.filter((item) => !ids.has(item.id));
+      next.rods.push(info.rodId);
+      result = { rodId: info.rodId, consumedIds };
       break;
     }
     case "equip_rod":
