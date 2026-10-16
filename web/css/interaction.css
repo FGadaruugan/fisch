@@ -1,0 +1,4 @@
+/* Game labels must not open text-selection menus during held actions. */
+#shell{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+/* Text entry keeps selection and native paste menus. */
+#shell input,#shell textarea,#shell [contenteditable]:not([contenteditable="false"]){-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
