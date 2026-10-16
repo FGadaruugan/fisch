@@ -1,3 +1,4 @@
+import {getImportableLocalSnapshot} from './local-import.js';
 import * as THREE from 'three';
 import {createGraphics} from './graphics.js';
 import {createVoyageScene} from './voyage-scene.js';
@@ -37,7 +38,7 @@ function refreshDeviceSupport(){
 
 function worldFactory(islandId,{totalXp=0}={}){currentScene=createVoyageScene(THREE,{islandId,totalXp,graphics});return currentScene;}
 function syncAccountView(){
-  const local=localService.getSnapshot(),hasProgress=local.coins||local.totalXp||local.stats.totalCaught||local.fish.length||local.collection.length||local.rods.length>1;
+  const local=getImportableLocalSnapshot(localService),hasProgress=local&&(local.coins||local.totalXp||local.stats.totalCaught||local.fish.length||local.collection.length||local.rods.length>1);
   view.setAccount({user:currentAuthUser?{email:currentAuthUser.email}:null,connected:app?.getService().mode==='online',...(onlineService?.getAccountState()||{canImport:false,importedFromLocal:false}),local:hasProgress?local:null});
 }
 function getAccountClient(){
@@ -135,7 +136,7 @@ async function command(name,payload={}){
   }
   if(name==='account_import'){
     view.setBusy(true,'account');
-    try{const service=onlineService;if(!service||!service.getAccountState().canImport)throw {code:'IMPORT_UNAVAILABLE'};const ticket=identityGuard.capture(service.ownerId),snapshot=localService.getSnapshot();await identityGuard.run(ticket,()=>service.importLocal(snapshot));await identityGuard.run(ticket,()=>app.setService(service));view.setConnection('online');syncAccountView();await app.dispatch('open',{panel:'profile'});view.showNotice('IMPORT_SUCCESS');}
+    try{const service=onlineService;if(!service||!service.getAccountState().canImport)throw {code:'IMPORT_UNAVAILABLE'};const ticket=identityGuard.capture(service.ownerId),snapshot=getImportableLocalSnapshot(localService);if(!snapshot)throw {code:'IMPORT_UNAVAILABLE'};await identityGuard.run(ticket,()=>service.importLocal(snapshot));await identityGuard.run(ticket,()=>app.setService(service));view.setConnection('online');syncAccountView();await app.dispatch('open',{panel:'profile'});view.showNotice('IMPORT_SUCCESS');}
     catch(error){view.showNotice(error?.code||'NETWORK_ERROR');}finally{view.setBusy(false,'account');}return;
   }
   if(name==='play'&&window.matchMedia('(pointer: coarse)').matches)void fullscreen.enter();
