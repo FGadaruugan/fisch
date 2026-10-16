@@ -7,7 +7,7 @@ export function createFavorites({storage,onError=()=>{}}={}) {
     const name=key(service);
     if(!cache.has(name)){
       let ids=[];
-      try{const saved=JSON.parse(storage?.getItem(name)||'[]');if(Array.isArray(saved))ids=saved.filter(id=>typeof id==='string'&&/^[\w-]{1,64}$/.test(id));}catch{onError('SAVE_RECOVERED');}
+      try{const saved=JSON.parse(storage?.getItem(name)||'[]');if(Array.isArray(saved))ids=saved.filter(id=>typeof id==='string'&&/^[\w-]{1,64}$/.test(id));}catch{onError('FAVORITES_UNAVAILABLE');}
       cache.set(name,new Set(ids));
     }
     return cache.get(name);

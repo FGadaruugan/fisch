@@ -64,3 +64,37 @@ test('storage failure retains usable progress',async()=>{
 test('prototype names are not accepted as purchasable rods',async()=>{
   const game=service();await assert.rejects(game.buyRod('constructor','bad-prototype'),{code:'INVALID_ROD'});
 });
+
+test('future local saves cannot be changed or cast from, even with an older backup',async()=>{
+  const raw=JSON.stringify({...saves.createInitialState(),version:2,coins:9876}),storage=memoryStorage({[saves.SAVE_KEY]:raw,[saves.SAVE_KEY+'.backup']:JSON.stringify(saves.createInitialState())});
+  const game=service({storage});
+  await assert.rejects(game.updateProfile({name:'No overwrite',avatar:0}),{code:'SAVE_INCOMPATIBLE'});
+  await assert.rejects(game.startCast('palm'),{code:'SAVE_INCOMPATIBLE'});
+  assert.equal(storage.getItem(saves.SAVE_KEY),raw);assert.equal(game.getPersistenceStatus().canImport,false);
+});
+test('a full populated v1 save survives normalization, mutation and reload',async()=>{
+  const state={...saves.createInitialState(),coins:10000,totalXp:3600,lastIsland:'sanctuary',rods:['starter','river'],equippedRod:'river',fish:[{id:'gold-kept',speciesId:'r01',islandId:'palm',weightGrams:3420,caughtAt:'2026-01-01T00:00:00.000Z'}]};
+  const storage=memoryStorage({[saves.SAVE_KEY]:JSON.stringify(state)}),game=service({storage});
+  await game.updateProfile({name:'Preserved',avatar:2});
+  const expected=saves.normalizeState({...state,profile:{name:'Preserved',avatar:2}});
+  assert.deepEqual(service({storage}).getSnapshot(),expected);
+  assert.equal(storage.getItem(saves.SAVE_KEY+'.backup'),JSON.stringify(state));
+});
+test('local service restores a good backup without erasing damaged source during load',async()=>{
+  const backup={...saves.createInitialState(),coins:6789},storage=memoryStorage({[saves.SAVE_KEY]:'bad-json',[saves.SAVE_KEY+'.backup']:JSON.stringify(backup)}),codes=[];
+  const game=service({storage,onStorageError:c=>codes.push(c)});
+  assert.equal(game.getSnapshot().coins,6789);assert.equal(storage.getItem(saves.SAVE_KEY),'bad-json');assert.ok(codes.includes('SAVE_RECOVERED'));
+  await game.updateProfile({name:'Recovered',avatar:0});assert.equal(storage.getItem(saves.SAVE_KEY+'.recovery'),'bad-json');
+  assert.equal(service({storage}).getSnapshot().coins,6789);
+});
+test('quota failure retains both usable session progress and previous durable save',async()=>{
+  const raw=JSON.stringify(saves.createInitialState()),storage=memoryStorage({[saves.SAVE_KEY]:raw});storage.setItem=()=>{throw Error('quota');};
+  const game=service({storage}),ticket=await game.startCast('palm');await game.finishCast(ticket.id,'caught');
+  assert.equal(game.getSnapshot().fish.length,1);assert.equal(storage.getItem(saves.SAVE_KEY),raw);assert.equal(game.getPersistenceStatus().canImport,false);
+});
+test('stale local session rejects mutations before changing its state or awarding a pending catch',async()=>{
+  const storage=memoryStorage(),a=service({storage}),b=service({storage});
+  const pending=await b.startCast('palm');await a.updateProfile({name:'Other tab',avatar:1});const before=b.getSnapshot();
+  await assert.rejects(b.updateProfile({name:'Stale',avatar:0}),{code:'SAVE_CONFLICT'});
+  await assert.rejects(b.finishCast(pending.id,'caught'),{code:'SAVE_CONFLICT'});assert.deepEqual(b.getSnapshot(),before);
+});

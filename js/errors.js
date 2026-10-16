@@ -2,6 +2,8 @@ export class GameError extends Error {
   constructor(code,message=code) { super(message); this.name='GameError';this.code=code; }
 }
 export const MESSAGES = Object.freeze({
+  SAVE_INCOMPATIBLE:'Энэ ахиц тоглоомын шинэ хувилбараар хадгалагдсан байна. Тоглоомоо шинэчлээд дахин нээгээрэй.',
+  SAVE_CONFLICT:'Өөр цонхонд ахиц өөрчлөгдсөн байна. Үргэлжлүүлэхийн өмнө тоглоомоо дахин нээгээрэй.',
   BACKPACK_FULL:'Backpack дүүрлээ. Худалдаачинд загасаа зараарай.',
   FISH_ESCAPED:'Загас мултарлаа. Дахин шидээд үзээрэй.',
   ISLAND_LOCKED:'Энэ аралд очихын тулд Level-ээ ахиулаарай.',
@@ -27,7 +29,9 @@ export const MESSAGES = Object.freeze({
   BOAT_READY:'Завь тавцангийн үзүүрт ирлээ. Дэргэд нь очоод E / Харилцах дарна.',
   BOAT_EXIT_BLOCKED:'Энд буух зай алга. Завиа эргээс жаахан холдуулаарай.',
   SAVE_UNAVAILABLE:'Энэ browser ахиц хадгалах боломжгүй байна. Тоглолт үргэлжилнэ.',
-  SAVE_RECOVERED:'Хадгалсан мэдээлэл уншигдсангүй. Шинэ local profile нээлээ.',
+  SAVE_RECOVERED:'Таны ахицыг хадгалсан нөөцөөс сэргээлээ.',
+  SAVE_DAMAGED:'Хадгалсан ахиц гэмтсэн, сэргээх нөөц олдсонгүй. Эх өгөгдлийг хамгаалж шинэ local аялал нээлээ.',
+  FAVORITES_UNAVAILABLE:'Зүрхэлсэн загасны тэмдэг уншигдсангүй. Загасаа зарахаас өмнө тэмдгийг шалгаарай.',
   ONLINE_UNAVAILABLE:'Онлайн үйлчилгээ хараахан холбогдоогүй байна.',
   FULLSCREEN_UNAVAILABLE:'Browser бүтэн дэлгэц нээхийг зөвшөөрсөнгүй. Тоглолт үргэлжилнэ.',
   AUTH_REQUIRED:'Онлайн profile нэвтэрсэнгүй. Холболтоо шалгаад дахин оролдоорой.',
