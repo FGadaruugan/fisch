@@ -3,16 +3,24 @@ import {cp,mkdir,rm,readdir,readFile,writeFile,stat} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {gzipSync} from 'node:zlib';
+import {canonicalHTML,generateResources,checkResources} from './build-resources.mjs';
 const root=fileURLToPath(new URL('../',import.meta.url)),dist=resolve(root,'dist');
 await import('./sync-server.mjs');
 await rm(dist,{recursive:true,force:true});await mkdir(dist,{recursive:true});
-await build({absWorkingDir:root,entryPoints:['js/main.js','js/account-callback.js'],outdir:dist,entryNames:'js/[name]',chunkNames:'js/chunks/[name]-[hash]',
+const result=await build({metafile:true,absWorkingDir:root,entryPoints:['js/main.js','js/account-callback.js'],outdir:dist,entryNames:'js/[name]',chunkNames:'js/chunks/[name]-[hash]',
   bundle:true,splitting:true,format:'esm',platform:'browser',target:'es2022',minify:true,legalComments:'linked',logLevel:'silent'});
 for(const file of ['index.html','account.html','manifest.webmanifest','css','assets'])await cp(resolve(root,file),resolve(dist,file),{recursive:true});
-for(const file of ['index.html','account.html'])await writeFile(resolve(dist,file),(await readFile(resolve(dist,file),'utf8')).replace('./web/js/','./js/'));
+for(const file of ['index.html','account.html'])await writeFile(resolve(dist,file),canonicalHTML(await readFile(resolve(dist,file),'utf8')).replace('./web/js/','./js/'));
 await cp(resolve(root,'THIRD_PARTY.md'),resolve(dist,'CREDITS.txt'));
+await cp(resolve(root,'THIRD_PARTY.md'),resolve(root,'CREDITS.txt'));
+await build({absWorkingDir:root,entryPoints:['js/resources/worker.js'],outfile:resolve(dist,'sw.js'),bundle:true,format:'iife',platform:'browser',target:'es2022',minify:true,logLevel:'silent'});
+await cp(resolve(dist,'sw.js'),resolve(root,'sw.js'));
+await generateResources({directory:dist,metafile:result.metafile,outputRoot:dist});
+await checkResources(dist);
 async function inspect(dir){let total=0,gzip=0,files=0;for(const e of await readdir(dir,{withFileTypes:true})){const path=resolve(dir,e.name);if(e.isDirectory()){const v=await inspect(path);total+=v.total;gzip+=v.gzip;files+=v.files;}else{const content=await readFile(path);total+=content.length;gzip+=gzipSync(content).length;files++;if(/SUPABASE_SERVICE_ROLE_KEY|sb_secret_[A-Za-z0-9_-]{24,}/.test(content.toString()))throw new Error('Privileged backend configuration leaked into static output');}}return {total,gzip,files};}
 const report=await inspect(dist);await stat(resolve(dist,'index.html'));
 // Branch-based Pages serves the root HTML; commit its fully bundled runtime too.
 await rm(resolve(root,'web'),{recursive:true,force:true});await cp(dist,resolve(root,'web'),{recursive:true});
+await generateResources({directory:root,jsPrefix:'web/js',metafile:result.metafile,outputRoot:dist});
+await checkResources(root);
 console.log(`Packaged ${report.files} static files · ${(report.total/1024).toFixed(0)} KB · ${(report.gzip/1024).toFixed(0)} KB gzip into dist/.`);

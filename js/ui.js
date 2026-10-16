@@ -4,7 +4,7 @@ import {messageFor} from './errors.js';
 import {createLobby} from './lobby.js';
 import {renderBackpack,renderRodShop} from './ui/backpack.js';
 import {renderProfile} from './ui/profile.js';
-import {renderSettings} from './ui/settings.js';
+import {renderSettings,updateSettings} from './ui/settings.js';
 import {renderMap,updateMapNavigation} from './ui/map.js';
 import {renderSecretTrade} from './ui/secret.js';
 import {ensureVoyageHud,renderVoyageHud,locationName} from './ui/navigation.js';
@@ -16,12 +16,12 @@ import {updatePerformanceReadout} from './device-support.js';
 import {ensureSupportTarget,renderDeviceSupport} from './ui/device-support.js';
 import {updateInstallCard} from './ui/install.js';
 
-const PANEL_TITLES={backpack:['YOUR COLLECTION','Backpack'],profile:['YOUR STORY','Profile'],shop:['THE NEXT UPGRADE','Rod shop'],map:['BEYOND THE HORIZON','Islands'],settings:['MAKE IT YOURS','Graphics & settings'],top:['THE BEST OF THE SEA','Top 30'],friends:['A SHARED JOURNEY','Friends'],guide:['YOUR FIRST CAST','Удирдлага']};
+const PANEL_TITLES={backpack:['YOUR COLLECTION','Backpack'],profile:['YOUR STORY','Profile'],shop:['THE NEXT UPGRADE','Rod shop'],map:['BEYOND THE HORIZON','Islands'],settings:['SETTINGS SYSTEM 2','Тохиргоо'],top:['THE BEST OF THE SEA','Top 30'],friends:['A SHARED JOURNEY','Friends'],guide:['YOUR FIRST CAST','Удирдлага']};
 PANEL_TITLES.secret=['THE FIVE OFFERINGS','Туурийн сахиул'];PANEL_TITLES.map=['CHART YOUR OWN VOYAGE','🗺 Газрын зураг'];
 export function createUI({document:doc,onCommand,onPhase=()=>{},onCatch=()=>{}}) {
   const el=id=>doc.getElementById(id),root=el('shell'),lobby=createLobby({root}),loadingSupport=ensureSupportTarget(doc),voyageHud=ensureVoyageHud(doc);
   let snapshot=null,panel=null,mode='lobby',gameMode='local',context={},settings={},stats={},social={connected:false,metric:'xp'},filter={tab:'fish',rarity:'all',sort:'weight'},previousFocus=null,lastPhase='idle',lastNotice='',lastNoticeTime=0,catchTimer=null;
-  const busySources=new Set(),originalDisabled=new WeakMap(),history=[];let account={user:null,connected:false},deviceSupport={features:[]},installState={};
+  const busySources=new Set(),originalDisabled=new WeakMap(),history=[];let account={user:null,connected:false},deviceSupport={features:[]},installState={},settingsState={};
   const send=(command,payload={})=>Promise.resolve(onCommand(command,payload)).catch(error=>showNotice(error?.code||'UNKNOWN'));
   const isEditing=()=>el('panelContent').contains(doc.activeElement)&&['INPUT','TEXTAREA'].includes(doc.activeElement?.tagName);
   function renderPanel(){
@@ -32,18 +32,18 @@ export function createUI({document:doc,onCommand,onPhase=()=>{},onCatch=()=>{}})
     else if(panel==='profile')content=renderProfile(snapshot,gameMode,account);
     else if(panel==='secret')content=renderSecretTrade(snapshot,context);
     else if(panel==='shop')content=h('div',{},h('div',{class:'shop-balance'},h('span',{},'ТАНЫ COIN'),h('b',{},'✦ '+money(snapshot.coins))),renderRodShop(snapshot),renderBackpack(snapshot,{tab:'fish',rarity:'all',sort:'value',merchant:context.merchant&&mode==='play',onFilter:patch=>{filter={...filter,...patch};}}));
-    else if(panel==='settings')content=renderSettings(settings,stats,deviceSupport,installState);
+    else if(panel==='settings')content=renderSettings(settings,stats,deviceSupport,installState,{...settingsState,gameMode},send);
     else if(panel==='map')content=renderMap(snapshot,context);
     else if(panel==='top'||panel==='friends')content=renderSocial(panel,social);
     else content=h('div',{class:'guide-panel'},h('h3',{},'Эхний загасаа барих'),h('ol',{},h('li',{},'WASD эсвэл joystick ашиглан тавцангийн үзүүрт оч.'),h('li',{},'F эсвэл Шидэх товчоо дарж бариад сулла.'),h('li',{},'Хөвөгч дохио өгөхөд F / Татах товчоо дахин дар.'),h('li',{},'Товчийг дарж/суллан барыг загасны тэмдэгтэй давхцуул.'),h('li',{},'Backpack-доо загасныхаа нэр, кг-г хар. Худалдаачинд зарж coin аваарай.')),h('h3',{},'Удирдлага'),h('p',{},'WASD / сум — алхах · Space — үсрэх · Mouse drag — камер · F — загасчлах · E — харилцах · B — Backpack · Esc — цэс'),h('p',{},'Утас: зүүн joystick-оор алхаж, дэлгэцийн баруун хоосон хэсгийг чирж камераа эргүүлнэ. Хоёр хуруугаар камерын зайг өөрчилнө.'));
     let nextFocus;
     for(const detail of content.querySelectorAll('details[data-catch-id]')){detail.open=expanded.has(detail.dataset.catchId);if(detail.dataset.catchId===focusedCatch)nextFocus=detail.querySelector('summary');}
-    target.replaceChildren(content);applyBusy();nextFocus?.focus({preventScroll:true});
+    el('modal').classList.toggle('ss2-modal',panel==='settings');target.replaceChildren(content);applyBusy();nextFocus?.focus({preventScroll:true});
   }
   function applyBusy(){
     const busy=busySources.size>0;doc.body.dataset.busy=String(busy);
     for(const button of root.querySelectorAll('button[data-command], button[type="submit"]')){
-      if(['close','open','lobby','support_refresh','install_app'].includes(button.dataset.command))continue;
+      if(['close','open','lobby','support_refresh','install_app','network_check'].includes(button.dataset.command)||/^(?:settings_|resources_)/.test(button.dataset.command||''))continue;
       if(busy){if(!originalDisabled.has(button))originalDisabled.set(button,button.disabled);button.disabled=true;}
       else if(originalDisabled.has(button)){button.disabled=originalDisabled.get(button);originalDisabled.delete(button);}
     }
@@ -70,9 +70,9 @@ export function createUI({document:doc,onCommand,onPhase=()=>{},onCatch=()=>{}})
   function setting(event){
     const control=event.target;if(!control.dataset?.setting)return;
     const name=control.dataset.setting,value=control.type==='checkbox'?control.checked:control.dataset.number==='true'?Number(control.value):control.value;
-    const label=root.querySelector('[data-range-label="'+name+'"]');if(label)label.textContent=typeof value==='number'?value.toFixed(control.step&&Number(control.step)<1?1:0):String(value);
-    void send('settings',{[name]:value});
+    void send('settings_edit',{values:{[name]:value},transaction:control.type==='range'?name:null,commit:event.type==='change'});
   }
+  const rangeInput=event=>{if(event.target.type==='range')setting(event);};
   function keyboard(event){
     const errorVisible=!el('loading').hidden&&el('loading').dataset.error==='true';
     if(!panel&&!errorVisible)return;
@@ -85,7 +85,7 @@ export function createUI({document:doc,onCommand,onPhase=()=>{},onCatch=()=>{}})
     }
   }
   const backdropClick=event=>{if(event.target===el('modalBackdrop'))void send('close');};
-  root.addEventListener('click',click);root.addEventListener('submit',submit);root.addEventListener('change',setting);root.addEventListener('input',event=>{if(event.target.type==='range')setting(event);});doc.addEventListener('keydown',keyboard);el('modalBackdrop').addEventListener('click',backdropClick);
+  root.addEventListener('click',click);root.addEventListener('submit',submit);root.addEventListener('change',setting);root.addEventListener('input',rangeInput);doc.addEventListener('keydown',keyboard);el('modalBackdrop').addEventListener('click',backdropClick);
   for(let i=0;i<18;i++)el('statsBars').append(h('i',{}));
   el('retryButton').addEventListener('click',()=>globalThis.location.reload());
   return{
@@ -122,7 +122,8 @@ export function createUI({document:doc,onCommand,onPhase=()=>{},onCatch=()=>{}})
       target.style.setProperty('--accent',RARITIES[f.rarity].color);target.hidden=false;catchTimer=setTimeout(()=>target.hidden=true,3800);onCatch(caught);
     },
     setBusy(value,source='game'){if(value)busySources.add(source);else busySources.delete(source);applyBusy();},
-    setSettings(next){settings=next;applyGuiVisibility(root,settings);},
+    setSettings(next){settings=next;settingsState={...settingsState,settings};applyGuiVisibility(root,settings);updateSettings(el('panelContent'),settingsState);},
+    setSettingsState(next){settingsState={...settingsState,...next};if(next.settings){settings=next.settings;applyGuiVisibility(root,settings);}updateSettings(el('panelContent'),{...settingsState,gameMode});},
     setInstallState(next){installState=next;const target=el('panelContent').querySelector('[data-app-install]');if(target)updateInstallCard(target,installState);},
     setDeviceSupport(next){
       deviceSupport=next;
@@ -130,7 +131,7 @@ export function createUI({document:doc,onCommand,onPhase=()=>{},onCatch=()=>{}})
       if(target){target.replaceChildren(renderDeviceSupport(deviceSupport));if(restoreFocus)target.querySelector('button')?.focus({preventScroll:true});}
       if(!loadingSupport.hidden){const restore=loadingSupport.contains(doc.activeElement);loadingSupport.replaceChildren(renderDeviceSupport(deviceSupport));if(restore)loadingSupport.querySelector('button')?.focus({preventScroll:true});}
     },
-    setConnection(nextMode){gameMode=nextMode;el('connectionBadge').className='connection-badge '+(nextMode==='online'?'online':'');el('connectionBadge').replaceChildren(h('i',{}),nextMode==='online'?'ONLINE':'LOCAL');if(panel==='profile'&&!isEditing())renderPanel();},
+    setConnection(nextMode){gameMode=nextMode;updateSettings(el('panelContent'),{gameMode});el('connectionBadge').className='connection-badge '+(nextMode==='online'?'online':'');el('connectionBadge').replaceChildren(h('i',{}),nextMode==='online'?'ONLINE':'LOCAL');if(panel==='profile'&&!isEditing())renderPanel();},
     setSocial(next){social={...social,...next};if(['top','friends'].includes(panel)&&!isEditing())renderPanel();},
     setAccount(next){account={...account,...next};if(panel==='profile'&&!isEditing())renderPanel();},
     getPanel:()=>panel,
@@ -143,6 +144,6 @@ export function createUI({document:doc,onCommand,onPhase=()=>{},onCatch=()=>{}})
     },
     finishLoading(){el('loading').hidden=true;},
     showError(message){el('loading').hidden=false;el('loading').dataset.error='true';el('loadingText').textContent=message;el('retryButton').hidden=false;el('loading').querySelector('.loading-wave').hidden=true;loadingSupport.hidden=false;loadingSupport.replaceChildren(renderDeviceSupport(deviceSupport));el('retryButton').focus({preventScroll:true});},
-    dispose(){clearTimeout(catchTimer);root.removeEventListener('click',click);root.removeEventListener('submit',submit);root.removeEventListener('change',setting);doc.removeEventListener('keydown',keyboard);el('modalBackdrop').removeEventListener('click',backdropClick);}
+    dispose(){clearTimeout(catchTimer);root.removeEventListener('click',click);root.removeEventListener('submit',submit);root.removeEventListener('change',setting);root.removeEventListener('input',rangeInput);doc.removeEventListener('keydown',keyboard);el('modalBackdrop').removeEventListener('click',backdropClick);}
   };
 }

@@ -8,7 +8,7 @@ import {createLocalService} from './services/local.js';
 import {createApp} from './app.js';
 import {createUI} from './ui.js';
 import {createAudio} from './audio.js';
-import {normalizeSettings,createFramePacer} from './performance.js';
+import {createFramePacer} from './performance.js';
 import {ONLINE_CONFIG} from './online-config.js';
 import {prepareSocialRefresh} from './ui/social-state.js';
 import {createFullscreenControl} from './fullscreen.js';
@@ -16,9 +16,14 @@ import {createPopupLogin} from './account-popup.js';
 import {createIdentityGuard} from './account-identity.js';
 import {collectDeviceSupport} from './device-support.js';
 import {createAppInstallControl} from './install.js';
+import {createSettingsController,changedSettings} from './settings/controller.js';
+import {createNetworkMonitor} from './network.js';
+import {createResourceManager} from './resources/manager.js';
 
-const byId=id=>document.getElementById(id),SETTINGS_KEY='fisch3d.settings.v1';
-let settings;try{settings=normalizeSettings(JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}'));}catch{settings=normalizeSettings();}
+const byId=id=>document.getElementById(id);
+let settingsStorage;try{settingsStorage=window.localStorage;}catch{}
+const settingsController=createSettingsController({storage:settingsStorage,onError:code=>view.showNotice(code)});
+let settings=settingsController.getState().settings;
 let app,graphics,currentScene,audio,socialService=null,onlineService=null,onlineClient=null,refreshGeneration=0,animationId=0;
 let socialState={connected:false,metric:'xp',friends:[],requests:{incoming:[],outgoing:[]},leaderboard:null},heartbeatTimer=null;
 let accountClientPromise,accountClient,currentAuthUser=null,onlineOwner=null,identityTransition=null,accountSigning=false,authSubscription,connectionQueue=Promise.resolve();
@@ -28,7 +33,19 @@ const appInstall=createAppInstallControl({window,onChange:state=>view.setInstall
 const fullscreen=createFullscreenControl({document,button:byId('fullscreenButton'),onResize:()=>graphics?.resize(),onUnavailable:()=>view.showNotice('FULLSCREEN_UNAVAILABLE')});
 audio=createAudio(()=>settings.volume);
 const localService=createLocalService({onStorageError:code=>view.showNotice(code)});
-const pacer=createFramePacer(settings.targetFps);view.setSettings(settings);
+const pacer=createFramePacer(settings.targetFps);
+settingsController.subscribe(state=>{const previousFps=settings.targetFps,patch=changedSettings(settings,state.settings);settings=state.settings;if(Object.keys(patch).length)graphics?.applySettings(patch);if(previousFps!==settings.targetFps)pacer.setTarget(settings.targetFps);view.setSettingsState(state);});
+view.setSettingsState(settingsController.getState());
+const baseURL=new URL('./',document.baseURI),build=document.querySelector('meta[name="fisch-build"]')?.content;
+const network=createNetworkMonitor({baseURL});network.subscribe(state=>view.setSettingsState({network:state}));view.setSettingsState({network:network.getState()});
+const resources=createResourceManager({baseURL,build,supported:!!(window.isSecureContext&&navigator.serviceWorker&&window.caches&&window.crypto?.subtle)});
+resources.subscribe(state=>view.setSettingsState({resources:state}));view.setSettingsState({resources:resources.getState()});void resources.initialize();
+if(window.isSecureContext&&navigator.serviceWorker){
+  const workerState=()=>resources.setWorkerActive(navigator.serviceWorker.controller?.scriptURL===new URL('sw.js',baseURL).href);
+  navigator.serviceWorker.addEventListener('controllerchange',workerState);workerState();
+  void navigator.serviceWorker.register(new URL('sw.js',baseURL),{scope:baseURL.pathname,updateViaCache:'none'}).then(()=>workerState()).catch(()=>resources.setWorkerActive(false));
+}
+void navigator.storage?.estimate?.().then(estimate=>view.setSettingsState({storageEstimate:estimate})).catch(()=>{});
 window.addEventListener('pointerdown',audio.unlock,{once:true});window.addEventListener('keydown',audio.unlock,{once:true});
 
 function refreshDeviceSupport(){
@@ -113,11 +130,19 @@ async function command(name,payload={}){
   if(name==='install_app')return appInstall.install();
   if(name==='support_refresh'){refreshDeviceSupport();return;}
   if(name==='fullscreen'){await fullscreen.toggle();return;}
-  if(name==='settings'){
-    const previousFps=settings.targetFps;
-    settings=normalizeSettings({...settings,...payload});graphics?.applySettings(payload);if(previousFps!==settings.targetFps)pacer.setTarget(settings.targetFps);view.setSettings(settings);
-    try{localStorage.setItem(SETTINGS_KEY,JSON.stringify(settings));}catch{view.showNotice('SAVE_UNAVAILABLE');}return;
-  }
+  if(name==='settings'){settingsController.edit(payload);return;}
+  if(name==='settings_edit'){settingsController.edit(payload.values,{transaction:payload.transaction,commit:payload.commit});return;}
+  if(name==='settings_preset'){settingsController.preset(payload.id);return;}
+  if(name==='settings_reset'){settingsController.reset(payload.category);return;}
+  if(name==='settings_undo'){settingsController.undo();return;}
+  if(name==='settings_profile_save')return settingsController.saveProfile(payload.name);
+  if(name==='settings_profile_load'){settingsController.loadProfile(payload.id);return;}
+  if(name==='settings_profile_delete')return settingsController.deleteProfile(payload.id);
+  if(name==='network_check')return network.check();
+  if(name==='resources_download')return resources.download(payload.tier);
+  if(name==='resources_pause'){resources.pause();return;}
+  if(name==='resources_resume')return resources.download();
+  if(name==='resources_remove')return resources.remove(payload.group);
   if(!app)return;
   if(name==='account_signin'){
     const login=createPopupLogin({window,callbackURL:ONLINE_CONFIG.callbackURL});
@@ -179,5 +204,5 @@ try{
   function visibility(value){app.setVisible(value);pacer.reset();graphics.resetMonitor();if(value)audio.resume();else audio.suspend();}
   document.addEventListener('visibilitychange',()=>visibility(!document.hidden));window.addEventListener('blur',()=>visibility(false));window.addEventListener('focus',()=>visibility(!document.hidden));
   byId('viewport').addEventListener('webglcontextlost',event=>{event.preventDefault();visibility(false);refreshDeviceSupport();view.showError('Графикийн холболт түр тасарлаа. Ахиц хадгалагдсан. Дахин оролдоорой.');});
-  window.addEventListener('beforeunload',()=>{cancelAnimationFrame(animationId);if(heartbeatTimer)clearInterval(heartbeatTimer);authSubscription?.unsubscribe();onlineService?.dispose();appInstall.dispose();fullscreen.dispose();app.dispose();graphics.dispose();audio.dispose();view.dispose();},{once:true});
+  window.addEventListener('beforeunload',()=>{cancelAnimationFrame(animationId);if(heartbeatTimer)clearInterval(heartbeatTimer);authSubscription?.unsubscribe();onlineService?.dispose();network.dispose();resources.pause();appInstall.dispose();fullscreen.dispose();app.dispose();graphics.dispose();audio.dispose();view.dispose();},{once:true});
 }catch(error){console.error('Fisch startup failed',error);refreshDeviceSupport();view.showError('3D график нээгдсэнгүй. Доорх дэмжлэгийн мэдээллийг шалгаад дахин оролдоорой.');}

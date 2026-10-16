@@ -1,0 +1,165 @@
+{
+  "schema": 1,
+  "build": "af7643f4f6d9cae5eb521cc1",
+  "entry": "./index.html",
+  "files": [
+    {
+      "url": "./CREDITS.txt?fisch-build=af7643f4f6d9cae5eb521cc1",
+      "bytes": 871,
+      "sha256": "3c9ec9e0ee170bcfdfc82749a7e424703c8e1073bc94de2adfb02d6efb905258"
+    },
+    {
+      "url": "./assets/app-180.png?fisch-build=af7643f4f6d9cae5eb521cc1",
+      "bytes": 3168,
+      "sha256": "d39a2b22fb336a344620811ed931838489b64f4fac796bba3e95e4223bc890f9"
+    },
+    {
+      "url": "./assets/app-192.png?fisch-build=af7643f4f6d9cae5eb521cc1",
+      "bytes": 3360,
+      "sha256": "782e39f858f701c3d231db680ceed64989f1016443efce7f2511f6404936fe6f"
+    },
+    {
+      "url": "./assets/app-512.png?fisch-build=af7643f4f6d9cae5eb521cc1",
+      "bytes": 9374,
+      "sha256": "ad3c103203f48988307f31a0f5f20f884d9510e6007cef4889030725fd717deb"
+    },
+    {
+      "url": "./assets/app-icon.svg?fisch-build=af7643f4f6d9cae5eb521cc1",
+      "bytes": 303,
+      "sha256": "212633befaf63bf4477eae9d4b73940ec980d4aa4239bf2a3087e86a939775b3"
+    },
+    {
+      "url": "./assets/favicon.svg?fisch-build=af7643f4f6d9cae5eb521cc1",
+      "bytes": 246,
+      "sha256": "420b6aaa30275c103e8fc10a928240aca8902595985216d9362d5f3665fc26a8"
+    },
+    {
+      "url": "./css/coloros2.css?fisch-build=af7643f4f6d9cae5eb521cc1",
+      "bytes": 23424,
+      "sha256": "b71ba00e2bdbbfe74c43b41dd25d0116c1074a35add178dbbbf9f5ce93a01a5f"
+    },
+    {
+      "url": "./css/game.css?fisch-build=af7643f4f6d9cae5eb521cc1",
+      "bytes": 48658,
+      "sha256": "748cd7d708a8e6ed1c6d0535586c325cac9ad652697a40250402b89c04781010"
+    },
+    {
+      "url": "./css/interaction.css?fisch-build=af7643f4f6d9cae5eb521cc1",
+      "bytes": 366,
+      "sha256": "eaad1d5a63585d6900a5079604a43fda2fac2cd88ea26f68cf1a499c64c32069"
+    },
+    {
+      "url": "./css/settings2.css?fisch-build=af7643f4f6d9cae5eb521cc1",
+      "bytes": 12960,
+      "sha256": "f13d8201f47ec121f4e4be69957a1b2d55196927bd6aa1d13f9b874c7b50fa64"
+    },
+    {
+      "url": "./index.html",
+      "bytes": 9656,
+      "sha256": "c55a0f6a60b9c3cf9ce7149fd5a7135cd0c403d1e74f1ea537897af0fe11c968"
+    },
+    {
+      "url": "./js/chunks/account-7LESLC7D.js",
+      "bytes": 148,
+      "sha256": "5515d4781a0ae96fdef163901c6eeb7b374e504ba7528a3b6194426deaa87953"
+    },
+    {
+      "url": "./js/chunks/chunk-5W44VGZA.js",
+      "bytes": 704,
+      "sha256": "efb62d5dda39b3bc6cdecd9e78a04a44028e889ca17e1468987298e4af2b8783"
+    },
+    {
+      "url": "./js/chunks/chunk-ATXUVK7R.js",
+      "bytes": 222342,
+      "sha256": "c238b1f9bcc074cf4cf4a61d04a939b4555e1693a59fbf46400b148fa8f64c8b"
+    },
+    {
+      "url": "./js/chunks/chunk-ELKYIBTV.js",
+      "bytes": 13994,
+      "sha256": "d89a331d1aa3255e9217ac725f0671d306e3249dfd5d704594d1d1ab5d84f497"
+    },
+    {
+      "url": "./js/chunks/chunk-I3OYH2ZC.js",
+      "bytes": 323,
+      "sha256": "87186af463d504216dafcf98f1faf42f1d022cece7d9ad36bd97a4f12d2d5549"
+    },
+    {
+      "url": "./js/chunks/chunk-TXH7JOX6.js",
+      "bytes": 17808,
+      "sha256": "8243def6d7a0ff6ae6809c4382ca1181a305e2442694cf889dc67e216d88afb6"
+    },
+    {
+      "url": "./js/chunks/online-UZGLJLPM.js",
+      "bytes": 4806,
+      "sha256": "7fecc7675f16b221c8c236e723582bc06c89ce8f828dccbe867ca5d8ecf743ee"
+    },
+    {
+      "url": "./js/main.js?fisch-build=af7643f4f6d9cae5eb521cc1",
+      "bytes": 924576,
+      "sha256": "cba7aefe7df8612f438974958ed620c57b0c58fe0fed3e09e366c5db83b98a5c"
+    },
+    {
+      "url": "./js/main.js.LEGAL.txt",
+      "bytes": 188,
+      "sha256": "cc7cc7e2f53d5db0235ab2226e85fc6e91655161573b39813b41bb00e5919674"
+    },
+    {
+      "url": "./manifest.webmanifest?fisch-build=af7643f4f6d9cae5eb521cc1",
+      "bytes": 686,
+      "sha256": "505be764297736965a9d9796f50992659ec12a836a027011fc356a41366522ee"
+    }
+  ],
+  "groups": {
+    "core": {
+      "files": [
+        "./css/coloros2.css?fisch-build=af7643f4f6d9cae5eb521cc1",
+        "./css/game.css?fisch-build=af7643f4f6d9cae5eb521cc1",
+        "./css/interaction.css?fisch-build=af7643f4f6d9cae5eb521cc1",
+        "./css/settings2.css?fisch-build=af7643f4f6d9cae5eb521cc1",
+        "./index.html",
+        "./js/chunks/chunk-ELKYIBTV.js",
+        "./js/chunks/chunk-I3OYH2ZC.js",
+        "./js/chunks/chunk-TXH7JOX6.js",
+        "./js/main.js?fisch-build=af7643f4f6d9cae5eb521cc1"
+      ],
+      "requires": []
+    },
+    "social": {
+      "files": [
+        "./js/chunks/account-7LESLC7D.js",
+        "./js/chunks/chunk-5W44VGZA.js",
+        "./js/chunks/chunk-ATXUVK7R.js",
+        "./js/chunks/online-UZGLJLPM.js"
+      ],
+      "requires": [
+        "core"
+      ]
+    },
+    "extras": {
+      "files": [
+        "./CREDITS.txt?fisch-build=af7643f4f6d9cae5eb521cc1",
+        "./assets/app-180.png?fisch-build=af7643f4f6d9cae5eb521cc1",
+        "./assets/app-192.png?fisch-build=af7643f4f6d9cae5eb521cc1",
+        "./assets/app-512.png?fisch-build=af7643f4f6d9cae5eb521cc1",
+        "./assets/app-icon.svg?fisch-build=af7643f4f6d9cae5eb521cc1",
+        "./assets/favicon.svg?fisch-build=af7643f4f6d9cae5eb521cc1",
+        "./js/main.js.LEGAL.txt",
+        "./manifest.webmanifest?fisch-build=af7643f4f6d9cae5eb521cc1"
+      ],
+      "requires": [
+        "social"
+      ]
+    }
+  },
+  "tiers": {
+    "core": [
+      "core"
+    ],
+    "extended": [
+      "social"
+    ],
+    "full": [
+      "extras"
+    ]
+  }
+}
