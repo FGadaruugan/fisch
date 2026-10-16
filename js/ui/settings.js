@@ -14,6 +14,7 @@ function toggle(label,key,value,description){
 }
 export function renderSettings(settings,stats={},support={},install={}){
   const root=h('div',{class:'settings-panel'});
+  root.append(h('section',{class:'coloros-card','aria-label':'ColorOS 2'},h('span',{class:'coloros-mark','aria-hidden':'true'},'2'),h('div',{},h('p',{class:'eyebrow'},'FISCH · LAGOON'),h('h3',{},'ColorOS 2'),h('p',{},'Далайн шинэ өнгө. Таны аяллын шинэ төрх.'))));
   root.append(renderInstallCard(install));
   root.append(h('div',{class:'graphics-summary'},h('span',{},'LIVE GRAPHICS'),h('b',{'data-live-stat':'fps'},(stats.fps||'—')+' FPS'),h('span',{'data-live-stat':'hz'},'RAF ≈ '+(stats.hz||'—')+' Hz'),h('span',{'data-live-stat':'quality'},stats.quality||'AUTO')),h('div',{'data-device-support':''},renderDeviceSupport(support)));
   const gui=h('section',{class:'gui-settings'},h('h3',{class:'settings-heading'},'GUI · Дэлгэцийн мэдээлэл'),h('p',{class:'help-text'},'Хэрэгтэй мэдээллээ ON, хэрэггүйг OFF болгоорой. Анхны тохиргоо бүгд ON. Сонголт энэ төхөөрөмжид хадгалагдана.'));

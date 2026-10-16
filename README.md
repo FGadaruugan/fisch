@@ -148,3 +148,13 @@ FSFS 2-ын эхний хэсэг нь local хадгалалтын хамгаа
   яг зэрэг бичиж байгаа хоёр цонхны atomic lock биш. Нэг local тоглолтыг нэг цонхонд ажиллуулна.
 - Local backup болон ❤️ тэмдэг энэ browser/origin-д байна. Browser data арилгахад
   нөөц мөн устдаг; энэ өөрчлөлт cloud backup эсвэл төхөөрөмж хоорондын зүрх sync нэмэхгүй.
+
+## ColorOS 2 · Lagoon
+
+ColorOS 2 нь Lobby, Backpack, Profile, Rod shop, Settings болон account цонхны
+нэгдсэн интерфэйсийн шинэчлэл. Далайн хөх, оюу өнгө, цайвар картууд, цэгцтэй
+үсэг ба SVG цэсний дүрстэй. Settings дээд талд ColorOS 2 танилцуулга харагдана.
+Утасны жижиг дэлгэц, хэвтээ горим, safe area, keyboard focus болон reduced-motion
+сонголтыг CSS зохиомжид тооцсон. Touch дэлгэц дээр цэсний blur эффектийг багасгана.
+
+Загвар нь `css/coloros2.css` давхаргад, үндсэн game stylesheet-ийн дараа ачаалагдана.

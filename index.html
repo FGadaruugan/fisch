@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#153d49">
+  <meta name="theme-color" content="#0a344b">
   <meta name="description" content="Дөрвөн арал, 30 загас, өөрийн аялал. PC болон утасны 3D загасчлалын тоглоом.">
   <title>fisch — Tides & Islands</title>
   <link rel="manifest" href="./manifest.webmanifest">
@@ -11,6 +11,7 @@
   <meta name="apple-mobile-web-app-title" content="Fisch">
   <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg">
   <link rel="stylesheet" href="./css/game.css">
+  <link rel="stylesheet" href="./css/coloros2.css">
 </head>
 <body data-mode="lobby">
   <canvas id="viewport" aria-label="3D арлын ертөнц"></canvas>
@@ -19,7 +20,7 @@
       <button class="wordmark" data-command="lobby" aria-label="Lobby руу">fisch<span>TIDES & ISLANDS</span></button>
       <div class="topbar-right">
         <span id="connectionBadge" class="connection-badge" data-gui="connection"><i></i> LOCAL</span>
-        <button class="profile-pill" data-command="open" data-payload='{"panel":"profile"}'>
+        <button class="profile-pill" aria-label="Profile нээх" data-command="open" data-payload='{"panel":"profile"}'>
           <span id="headerAvatar" class="avatar">🎣</span>
           <span class="profile-copy"><b id="playerName">Fisher</b><span id="playerLevel">LV. 1</span><span class="mini-xp"><i id="headerXp"></i></span></span>
         </button>
@@ -32,19 +33,19 @@
     <main id="lobby" class="lobby">
       <div class="lobby-gradient"></div>
       <section class="lobby-content">
-        <p class="eyebrow"><span class="little-line"></span> YOUR NEXT ADVENTURE</p>
-        <h1>Далайн цаана<br><em>таны домог.</em></h1>
-        <p class="hero-description">Саваагаа шид. Нууцыг нь нээ.<br>Дөрвөн арал, гучин гайхамшиг.</p>
+        <p class="eyebrow"><span class="release-tag">COLOROS 2</span> ТАНЫ ДАРААГИЙН АЯЛАЛ</p>
+        <h1>Далай дүүрэн<br><em>шинэ нээлт.</em></h1>
+        <p class="hero-description">Саваагаа шид. Өөрийн домгийг бүтээ.<br>Дөрвөн арал, төгсгөлгүй адал явдал.</p>
         <button class="play-button" data-command="play"><span class="play-triangle">▶</span><span><b>Тоглох</b><small id="playDestination">Palm Bay-аас эхэлнэ</small></span><span class="play-arrow">↗</span></button>
         <nav class="lobby-grid" aria-label="Lobby цэс">
-          <button data-command="open" data-payload='{"panel":"backpack"}'><span>🎒</span><b>Backpack</b><small id="backpackCount">0 / 100</small></button>
-          <button data-command="open" data-payload='{"panel":"profile"}'><span>◉</span><b>Profile</b><small>Таны аялал</small></button>
-          <button data-command="open" data-payload='{"panel":"top"}'><span>♜</span><b>Top 30</b><small>Далайн шилдгүүд</small></button>
-          <button data-command="open" data-payload='{"panel":"friends"}'><span>♧</span><b>Friends</b><small>Найзуудын ертөнц</small></button>
-          <button data-command="open" data-payload='{"panel":"shop"}'><span>⚓</span><b>Rod shop</b><small>Дараагийн саваа</small></button>
-          <button data-command="open" data-payload='{"panel":"map"}'><span>⌁</span><b>Islands</b><small>Шинэ эргийг нээ</small></button>
+          <button data-command="open" data-payload='{"panel":"backpack"}'><span class="menu-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 7V5a4 4 0 0 1 8 0v2M6 7h12a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2Z"/><path d="M8 15h8v5H8zM8 10h8"/></svg></span><b>Backpack</b><small id="backpackCount">0 / 100</small></button>
+          <button data-command="open" data-payload='{"panel":"profile"}'><span class="menu-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v2"/></svg></span><b>Profile</b><small>Таны аялал</small></button>
+          <button data-command="open" data-payload='{"panel":"top"}'><span class="menu-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 3h8v6a4 4 0 0 1-8 0ZM8 5H4v2a4 4 0 0 0 4 4M16 5h4v2a4 4 0 0 1-4 4M12 13v5M8 21h8M9 18h6"/></svg></span><b>Top 30</b><small>Далайн шилдгүүд</small></button>
+          <button data-command="open" data-payload='{"panel":"friends"}'><span class="menu-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M2 21v-2a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v2M16 5a3 3 0 0 1 0 6M18 14a5 5 0 0 1 4 5v2"/></svg></span><b>Friends</b><small>Найзуудын ертөнц</small></button>
+          <button data-command="open" data-payload='{"panel":"shop"}'><span class="menu-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m5 20 9-16 5 3-9 16M14 4l-2-1M18 8l3-5M5 20l-2 1M10 12l-2-1"/></svg></span><b>Rod shop</b><small>Дараагийн саваа</small></button>
+          <button data-command="open" data-payload='{"panel":"map"}'><span class="menu-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3ZM9 3v15M15 6v15"/></svg></span><b>Islands</b><small>Шинэ эргийг нээ</small></button>
         </nav>
-        <div class="lobby-footer"><span>01 — PALM BAY</span><span>30 SPECIES · 4 ISLANDS</span></div>
+        <div class="lobby-footer"><span>01 — PALM BAY</span><span>4 АРАЛ · ӨӨРИЙН АЯЛАЛ</span></div>
       </section>
       <aside class="island-caption"><span class="caption-line"></span><small>EXPLORE THE ARCHIPELAGO</small><b id="lobbyIslandName">Palm Bay</b><p id="lobbyIslandSubtitle">Эхлэл бүхэн нэг эргээс</p></aside>
     </main>
