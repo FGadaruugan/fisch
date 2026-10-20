@@ -2,12 +2,15 @@ import {createFavorites} from './favorites.js';
 import {operationId} from './services/local.js';
 import {GameError} from './errors.js';
 import {canVisit} from './progression.js';
+import {createAutoCatch} from './auto-catch.js';
 
 /** Owns game lifecycle; rendering, persistence and input are injected boundaries. */
 export function createApp({service,fishing,input,worldFactory,view,favoriteStorage}) {
   let mode='lobby',panel=null,visible=true,disposed=false,busyCount=0,generation=0,activeTicket=null,held=false,previousAction=false,pendingFinish=null,destination=null,elapsed=0,arrivalRetry=0,pendingArrival=null;
   let scene=worldFactory(service.getSnapshot().lastIsland,{totalXp:service.getSnapshot().totalXp}),unsubscribe=()=>{};
+  let autoCatch=null;
   const isBusy=()=>busyCount>0;
+  function stopAutoCatch(){autoCatch?.stop();view.setAutoCatchState?.(false);}
   const syncInput=()=>input.setEnabled(visible&&mode==='play'&&!panel&&!disposed);
   const changeBusy=delta=>{busyCount=Math.max(0,busyCount+delta);view.setBusy(isBusy());};
   const fail=error=>view.showNotice(error?.code||'UNKNOWN');
@@ -16,6 +19,7 @@ export function createApp({service,fishing,input,worldFactory,view,favoriteStora
   const nearSecret=()=>mode==='play'&&scene.player.motion==='walking'&&near(scene.world.secret);
   function bind(){unsubscribe=service.subscribe(snapshot=>{if(!disposed){scene.setAccess?.(snapshot.totalXp);view.renderSnapshot(favorites.decorate(service,snapshot));}});}
   function cancelActive(){
+    stopAutoCatch();
     generation++;held=false;previousAction=false;fishing.cancel();input.releaseAll();
     const ticket=activeTicket;activeTicket=null;
     if(ticket&&!pendingFinish)service.cancelCast(ticket.id).catch(fail);
@@ -43,6 +47,14 @@ export function createApp({service,fishing,input,worldFactory,view,favoriteStora
       if(!held)fishing.release();
     }catch(error){fail(error);}finally{changeBusy(-1);}
   }
+  autoCatch=createAutoCatch({
+    fishing,
+    fishPress,
+    release(){held=false;fishing.release();},
+    canStart:()=>!disposed&&visible&&mode==='play'&&!panel&&!isBusy()
+      &&!['swimming','sailing'].includes(scene.player.motion)
+      &&!!scene.world.fishingSpot(scene.player.position)
+  });
   function handleFinish(event){
     if(disposed||activeTicket?.id!==event.ticketId)return Promise.resolve(null);
     activeTicket=null;changeBusy(1);
@@ -88,7 +100,12 @@ export function createApp({service,fishing,input,worldFactory,view,favoriteStora
       case 'lobby':cancelActive();mode='lobby';panel=null;showCurrent();break;
       case 'fish_press':await fishPress();break;
       case 'fish_release':held=false;fishing.release();break;
-      case 'cancel':cancelActive();break;
+      case 'cancel':stopAutoCatch();cancelActive();break;
+      case 'auto_toggle': {
+        const active=autoCatch?.toggle()||false;
+        view.setAutoCatchState?.(active);
+        break;
+      }
       case 'travel':await travel(payload.islandId);break;
       case 'buy_rod':await run(()=>service.buyRod(payload.rodId,operationId()));break;
       case 'trade_rod': {
@@ -118,6 +135,7 @@ export function createApp({service,fishing,input,worldFactory,view,favoriteStora
       if(values.interactPressed&&!isBusy()&&!fishing.active){const interaction=scene.interact?.();if(interaction){if(interaction.code)view.showNotice(interaction.code);}else if(nearSecret())openPanel('secret');else if(near(scene.world.seller))openPanel('shop');else if(near(scene.world.ferry))openPanel('map');}
       if(values.actionHeld!==previousAction){previousAction=values.actionHeld;if(values.actionHeld)void fishPress();else{held=false;fishing.release();}}
     }
+    if(mode==='play'&&!panel)autoCatch?.tick();
     fishing.tick(dt);
     const locked=mode!=='play'||!!panel||fishing.active||isBusy();
     scene.update({...values,freeze:locked,moveX:locked?0:values.moveX,moveZ:locked?0:values.moveZ,jumpPressed:!locked&&values.jumpPressed},dt,fishing.getView(),mode);
@@ -125,7 +143,7 @@ export function createApp({service,fishing,input,worldFactory,view,favoriteStora
     view.renderFishing(fishing.getView());
     view.renderContext?.({...scene.getNavigation?.(destination),islandId:scene.world.islandId,position:scene.player.position,merchant:near(scene.world.seller),ferry:near(scene.world.ferry),secret:nearSecret(),spot:!!scene.world.fishingSpot(scene.player.position),mode,panel});
   }
-  function setVisible(value){visible=!!value;held=false;previousAction=false;fishing.setPaused(!visible);syncInput();}
+  function setVisible(value){visible=!!value;if(!visible)stopAutoCatch();held=false;previousAction=false;fishing.setPaused(!visible);syncInput();}
   async function setService(next){
     if(!next||typeof next.getSnapshot!=='function'||next.isActive?.()===false)throw new GameError('AUTH_REQUIRED');
     if(pendingFinish)await pendingFinish;
