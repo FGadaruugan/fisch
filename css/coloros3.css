@@ -1,0 +1,67 @@
+/* ColorOS 3 · Crimson Tide. Animation-rich, responsive, and reduced-motion aware. */
+:root {
+  --ink: #3b1720;
+  --teal: #b42336;
+  --cream: #fff7f7;
+  --gold: #ffc2b9;
+  --muted: #89646b;
+  --line: #f0d9dc;
+  --co-surface: #fff6f6;
+  --co-card: #ffffff;
+  --co-radius: 24px;
+  --co-shadow: 0 24px 80px #4b071b24;
+  --co-accent: #e11d48;
+  --co-accent-soft: #ffe4e9;
+  --co-glow: #fb718555;
+  color-scheme: light;
+}
+html { scroll-behavior: smooth; }
+body { animation: co3-page-in .55s cubic-bezier(.2,.75,.25,1) both; }
+button, a, input, select, summary, .fish-card, .rod-shop-card, .lobby-grid button, .btn {
+  transition: background-color .22s ease, color .22s ease, border-color .22s ease,
+    box-shadow .28s ease, transform .28s cubic-bezier(.2,.75,.25,1), opacity .22s ease;
+}
+button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible, a:focus-visible {
+  outline: 3px solid #e11d48;
+  outline-offset: 4px;
+}
+.wordmark { animation: co3-mark-in .7s cubic-bezier(.2,.8,.2,1) both; }
+.release-tag { color: #ffe4e9; background: #e11d4822; border-color: #fb718577; }
+.release-tag:before { background: #fb7185; box-shadow: 0 0 14px #fb7185aa; }
+.play-button { background: linear-gradient(115deg,#ffe4e9,#ffc2cf 45%,#fff0f2); border-color: #fb7185; box-shadow: 0 10px 30px #be123c25; }
+.play-button:hover { transform: translateY(-3px) scale(1.015); box-shadow: 0 16px 38px #be123c35; }
+.play-triangle, .lobby-grid button>span { color: #e11d48; }
+.lobby-grid button:hover, .fish-card:hover, .rod-shop-card:hover { transform: translateY(-4px); box-shadow: 0 16px 38px #88133716; }
+.btn.primary { background: linear-gradient(120deg,#be123c,#e11d48 55%,#f43f5e); border-color: #be123c; box-shadow: 0 7px 18px #be123c24; }
+.btn.primary:hover:not(:disabled) { background: #9f1239; box-shadow: 0 10px 24px #be123c32; }
+.tabs button.active { color: #be123c; box-shadow: 0 4px 12px #88133712; }
+.favorite-button.active { color: #be123c; background: #fff0f3; border-color: #fda4af; }
+.panel-header { background: linear-gradient(120deg,#fff,#fff1f3); }
+.close-button:hover { background: #ffe4e9; color: #9f1239; }
+.charge-track i, .reel-progress i { background: linear-gradient(90deg,#fb7185,#e11d48,#be123c); }
+.fishing-action { background: linear-gradient(120deg,#ffe4e9,#fda4af); border-color: #fb7185; color: #5f1025; }
+.fishing-action:hover { box-shadow: 0 0 28px #fb718555; }
+.modal { animation: co3-panel-in .3s cubic-bezier(.2,.8,.2,1) both; }
+.modal-backdrop { animation: co3-fade-in .2s ease both; }
+.fish-card, .rod-shop-card { animation: co3-card-in .42s cubic-bezier(.2,.75,.25,1) both; }
+.fish-card:nth-child(3n + 2), .rod-shop-card:nth-child(3n + 2) { animation-delay: 35ms; }
+.fish-card:nth-child(3n), .rod-shop-card:nth-child(3n) { animation-delay: 70ms; }
+@keyframes co3-page-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes co3-mark-in { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes co3-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes co3-panel-in { from { opacity: 0; transform: translateY(14px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes co3-card-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@media (max-width: 680px) {
+  .wordmark { font-size: 29px; }
+  .play-button:hover, .lobby-grid button:hover, .fish-card:hover, .rod-shop-card:hover { transform: none; }
+  .modal { animation-duration: .2s; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+  }
+}

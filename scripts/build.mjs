@@ -7,9 +7,9 @@ import {canonicalHTML,generateResources,checkResources} from './build-resources.
 const root=fileURLToPath(new URL('../',import.meta.url)),dist=resolve(root,'dist');
 await import('./sync-server.mjs');
 await rm(dist,{recursive:true,force:true});await mkdir(dist,{recursive:true});
-const result=await build({metafile:true,absWorkingDir:root,entryPoints:['js/main.js','js/account-callback.js'],outdir:dist,entryNames:'js/[name]',chunkNames:'js/chunks/[name]-[hash]',
+const result=await build({metafile:true,absWorkingDir:root,entryPoints:['js/main.js','js/account-callback.js','js/admin-studio.js'],outdir:dist,entryNames:'js/[name]',chunkNames:'js/chunks/[name]-[hash]',
   bundle:true,splitting:true,format:'esm',platform:'browser',target:'es2022',minify:true,legalComments:'linked',logLevel:'silent'});
-for(const file of ['index.html','account.html','manifest.webmanifest','css','assets'])await cp(resolve(root,file),resolve(dist,file),{recursive:true});
+for(const file of ['index.html','account.html','admin.html','manifest.webmanifest','css','assets'])await cp(resolve(root,file),resolve(dist,file),{recursive:true});
 for(const file of ['index.html','account.html'])await writeFile(resolve(dist,file),canonicalHTML(await readFile(resolve(dist,file),'utf8')).replace('./web/js/','./js/'));
 await cp(resolve(root,'THIRD_PARTY.md'),resolve(dist,'CREDITS.txt'));
 await cp(resolve(root,'THIRD_PARTY.md'),resolve(root,'CREDITS.txt'));

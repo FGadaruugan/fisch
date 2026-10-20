@@ -1,5 +1,5 @@
 const socialActions=new Set(['friend_request','friend_respond','friend_cancel','friend_remove','friends','requests','leaderboard','heartbeat']);
-export function createApiHandler({verifyUser,game,social,allowedOrigins=[]}){
+export function createApiHandler({verifyUser,isAdmin=async()=>false,game,social,allowedOrigins=[]}){
   return async request=>{
     const origin=request.headers.get('origin');
     const headers={'content-type':'application/json','cache-control':'no-store','vary':'Origin',
@@ -19,6 +19,11 @@ export function createApiHandler({verifyUser,game,social,allowedOrigins=[]}){
       const text=await request.text();if(new TextEncoder().encode(text).length>131072)return fail('INVALID_REQUEST',413);
       let body;try{body=JSON.parse(text);}catch{return fail('INVALID_REQUEST',text.length>16384?413:400);}
       if(!body||typeof body.action!=='string')return fail('INVALID_REQUEST',400);
+      if(body.action==='admin_status'){
+        // Fail closed: admin authorization is derived only from the verified server-side identity.
+        if(!(await isAdmin(user)))return fail('FORBIDDEN',403);
+        return reply({ok:true,role:'Admin+'});
+      }
       if(body.action!=='import_local'&&text.length>16384)return fail('INVALID_REQUEST',413);
       const command={ownerId:user.id,action:body.action,operationId:body.operationId,payload:body.payload??{}};
       return reply(await (socialActions.has(body.action)?social:game)(command));
