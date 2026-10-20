@@ -29,3 +29,16 @@ test('an account-bound request with a newly switched JWT cannot mutate the new a
   const request=new Request('https://api.example',{method:'POST',headers:{authorization:'Bearer token-B','x-fisch-owner':'A'},body:JSON.stringify({action:'import_local'})});
   assert.equal((await handler(request)).status,401);assert.equal(mutations,0);
 });
+
+test('Admin+ status is denied by default and never falls through to game commands',async()=>{
+  let gameCalls=0;
+  const handler=createApiHandler({verifyUser:async()=>({id:'verified-user'}),game:async()=>{gameCalls++;return {ok:true};},social:async()=>({ok:true})});
+  const response=await handler(new Request('https://api.example',{method:'POST',headers:{authorization:'Bearer token','content-type':'application/json'},body:JSON.stringify({action:'admin_status'})}));
+  assert.equal(response.status,403);assert.equal(gameCalls,0);
+});
+test('Admin+ status requires the server-side allowlist predicate',async()=>{
+  const makeHandler=isAdmin=>createApiHandler({verifyUser:async()=>({id:'verified-user'}),isAdmin,game:async()=>({ok:false}),social:async()=>({ok:false})});
+  const request=()=>new Request('https://api.example',{method:'POST',headers:{authorization:'Bearer token','content-type':'application/json'},body:JSON.stringify({action:'admin_status'})});
+  const denied=await makeHandler(async user=>user.id==='other-user')(request());assert.equal(denied.status,403);
+  const allowed=await makeHandler(async user=>user.id==='verified-user')(request());assert.equal(allowed.status,200);assert.deepEqual(await allowed.json(),{ok:true,role:'Admin+'});
+});
