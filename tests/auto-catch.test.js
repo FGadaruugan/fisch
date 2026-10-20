@@ -25,11 +25,26 @@ test('idle phase starts a cast once while the request is pending',async()=>{
   assert.equal(x.counts().presses,1);
 });
 
-test('charging holds and releases near full charge',()=>{
-  const x=setup();x.auto.start();
-  x.set({phase:'charging',charge:.2});x.auto.tick();
+test('idle phase does not start a cast while busy',()=>{
+  let allowed=true;
+  const x=setup({canStart:()=>allowed});
+  assert.equal(x.auto.start(),true);
+  allowed=false;
+  x.auto.tick();
+  assert.equal(x.counts().presses,0);
+});
+
+test('charging continues while a transient busy guard is active',()=>{
+  let allowed=true;
+  const x=setup({canStart:()=>allowed});
+  x.auto.start();
+  x.set({phase:'charging',charge:.2});
+  allowed=false;
+  x.auto.tick();
   assert.equal(x.counts().presses,1);
-  x.set({charge:.99});x.auto.tick();
+  assert.equal(x.counts().releases,0);
+  x.set({charge:.99});
+  x.auto.tick();
   assert.equal(x.counts().releases,1);
 });
 

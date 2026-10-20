@@ -1,5 +1,5 @@
 /**
- * Fisch Auto Catch v1.0.
+ * Fisch Auto Catch v1.1.
  * Automates only the fishing simulation inside this website.
  */
 export function createAutoCatch({fishing,fishPress,release,canStart=()=>true}) {
@@ -33,13 +33,24 @@ export function createAutoCatch({fishing,fishPress,release,canStart=()=>true}) {
 
   function tick() {
     if(!enabled)return;
-    if(!canStart()) { setHeld(false); return; }
     const state=fishing.getView();
+
+    // canStart includes transient busy state (startCast/finishCast). Only
+    // apply it while idle; otherwise the cast request itself releases input
+    // before the charging phase can begin.
+    if(state.phase==='idle'&&!canStart()) {
+      setHeld(false);
+      return;
+    }
+
     switch(state.phase) {
       case 'idle':
         if(!pending) {
           pending=true;
-          Promise.resolve().then(()=>fishPress()).finally(()=>{pending=false;});
+          Promise.resolve()
+            .then(()=>fishPress())
+            .catch(()=>{})
+            .finally(()=>{pending=false;});
         }
         break;
       case 'charging': setHeld(state.charge<0.98); break;
