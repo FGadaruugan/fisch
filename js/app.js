@@ -51,6 +51,7 @@ export function createApp({service,fishing,input,worldFactory,view,favoriteStora
     fishing,
     fishPress,
     release(){held=false;fishing.release();},
+    isBusy,
     canStart:()=>!disposed&&visible&&mode==='play'&&!panel&&!isBusy()
       &&!['swimming','sailing'].includes(scene.player.motion)
       &&!!scene.world.fishingSpot(scene.player.position)
@@ -102,8 +103,13 @@ export function createApp({service,fishing,input,worldFactory,view,favoriteStora
       case 'fish_release':held=false;fishing.release();break;
       case 'cancel':stopAutoCatch();cancelActive();break;
       case 'auto_toggle': {
+        const wasActive=!!autoCatch?.enabled;
         const active=autoCatch?.toggle()||false;
         view.setAutoCatchState?.(active);
+        if(!active&&!wasActive&&!disposed&&mode==='play'&&!panel&&!isBusy()) {
+          if(['swimming','sailing'].includes(scene.player.motion))view.showNotice('ON_FOOT_FISHING');
+          else if(!scene.world.fishingSpot(scene.player.position))view.showNotice('NEAR_WATER');
+        }
         break;
       }
       case 'travel':await travel(payload.islandId);break;
