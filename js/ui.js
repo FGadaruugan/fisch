@@ -91,6 +91,7 @@ export function createUI({document:doc,onCommand,onPhase=()=>{},onCatch=()=>{}})
   return{
     renderSnapshot(state){snapshot=state;lobby.renderHeader(state);if(panel&&panel!=='settings'&&!isEditing())renderPanel();},
     showPanel,showNotice,
+    setAutoCatchState(active){const button=root.querySelector('[data-command="auto_toggle"]');if(!button)return;button.classList.toggle('is-active',!!active);button.setAttribute('aria-pressed',String(!!active));button.textContent=active?'🤖 Auto Catch · ON':'🤖 Auto Catch';},
     renderFishing(view){
       if(view.phase!==lastPhase){onPhase(view.phase,lastPhase);lastPhase=view.phase;}
       const active=['charging','waiting','bite','reeling'].includes(view.phase);doc.body.dataset.fishingActive=String(active);el('fishingHud').hidden=!active||mode!=='play'||!!panel;
