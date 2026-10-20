@@ -238,3 +238,23 @@ input:not([type="range"]):not([type="radio"]):not([type="checkbox"]),select{back
 @media(max-height:520px) and (orientation:landscape){.topbar{padding:12px 20px}.wordmark{font-size:28px}.lobby-content{left:5%;width:360px;right:auto;top:77px;bottom:18px;transform:none;overflow-y:auto;scrollbar-width:thin}.lobby-content>.eyebrow,.hero-description,.island-caption,.lobby-footer{display:none}.lobby-content h1{font-size:29px;line-height:1.1;margin:5px 0 12px}.play-button{padding:10px 16px;border-radius:15px}.play-button b{font-size:14px}.play-triangle{width:30px;height:30px}.lobby-grid{gap:7px;margin-top:10px}.lobby-grid button{min-height:58px;padding:9px 12px;gap:5px;border-radius:13px}.lobby-grid small{display:none}.lobby-grid b{font-size:10px}.menu-icon svg{width:18px;height:18px}.modal{max-height:94dvh}.panel-header{padding:15px 22px}.panel-content{padding:17px 22px}}
 @media(pointer:coarse){.topbar,.modal,.lobby-grid button,.icon-button,.profile-pill,.coin-pill{backdrop-filter:none}.modal-backdrop{backdrop-filter:none}.icon-button:hover,.lobby-grid button:hover{transform:none}}
 @media(prefers-reduced-motion:reduce){.modal{animation:none}*,*:before,*:after{transition:none!important;animation:none!important}}
+
+/* Auto Catch · ColorOS 2 */
+.auto-catch-button {
+  color: #d8fff1;
+  background: linear-gradient(135deg, #087d82, #164b66);
+  border: 1px solid #70dfca80;
+  border-radius: 14px;
+  padding: 10px 12px;
+  font-weight: 750;
+  white-space: nowrap;
+  box-shadow: 0 5px 22px #087d822b;
+  transition: transform .2s ease, filter .2s ease;
+}
+.auto-catch-button:hover { filter: brightness(1.15); transform: translateY(-2px); }
+.auto-catch-button.is-active {
+  background: linear-gradient(135deg, #176b45, #0d4037);
+  border-color: #74f0b4;
+  box-shadow: 0 0 18px #74f0b42b;
+}
+@media (max-width: 600px) { .auto-catch-button { padding: 9px; font-size: 11px; } }
