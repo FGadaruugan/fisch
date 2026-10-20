@@ -25,6 +25,15 @@ test('idle phase starts a cast once while the request is pending',async()=>{
   assert.equal(x.counts().presses,1);
 });
 
+test('idle phase does not start a cast while busy',()=>{
+  let allowed=true;
+  const x=setup({canStart:()=>allowed});
+  assert.equal(x.auto.start(),true);
+  allowed=false;
+  x.auto.tick();
+  assert.equal(x.counts().presses,0);
+});
+
 test('charging continues while a transient busy guard is active',()=>{
   let allowed=true;
   const x=setup({canStart:()=>allowed});
@@ -37,15 +46,6 @@ test('charging continues while a transient busy guard is active',()=>{
   x.set({charge:.99});
   x.auto.tick();
   assert.equal(x.counts().releases,1);
-});
-
-test('idle phase does not start a cast while busy',()=>{
-  let allowed=false;
-  const x=setup({canStart:()=>allowed});
-  x.auto.enabled;
-  assert.equal(x.auto.start(),false);
-  x.auto.tick();
-  assert.equal(x.counts().presses,0);
 });
 
 test('reeling updates held input and stop disables the loop',()=>{
