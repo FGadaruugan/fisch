@@ -30,5 +30,4 @@ login.addEventListener('click',async()=>{
  catch{show('Нэвтрэлт эхэлсэнгүй. Auth provider-ийн тохиргоог шалгана уу.');login.disabled=false;}
 });
 logout.addEventListener('click',async()=>{await client.auth.signOut();reset();login.hidden=false;login.disabled=false;show('Системээс гарлаа.');});
-client.auth.onAuthStateChange(()=>{void verify();});
 void verify();
