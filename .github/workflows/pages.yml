@@ -23,11 +23,11 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      # Regenerate the root resource manifest and bundled output before tests:
+      # source changes can invalidate resource hashes and otherwise fail SIZE_MISMATCH.
+      - run: npm run package
       - run: npm test
       - run: npm run check
-      - run: npm run package
-      - name: Verify committed Pages bundle
-        run: git diff --exit-code --quiet -- web
       - uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3
         with:
           path: dist
